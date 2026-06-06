@@ -1,0 +1,29 @@
+{
+  "project_info": {
+    "project_number": "1007660997923",
+    "project_id": "desamallapps",
+    "storage_bucket": "desamallapps.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:1007660997923:android:dc63c32ac9ac9d962bc096",
+        "android_client_info": {
+          "package_name": "com.example.desamall_app"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyCojgmxyrpSnRFAxpKtuGa_jHv4QM50d7g"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}
