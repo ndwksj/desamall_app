@@ -358,28 +358,42 @@ class _ReceiptsAdminState extends State<ReceiptsAdmin> {
           expand: false,
           builder: (context, scrollController) => FutureBuilder<QuerySnapshot>(
             future: FirebaseFirestore.instance
-                .collection('orders')
-                .where('uid', isEqualTo: customerId)
-                .where('timestamp', isGreaterThanOrEqualTo: startTime)
-                .where('timestamp', isLessThanOrEqualTo: endTime)
-                .limit(1)
-                .get(),
+    .collection('orders')
+    .where('uid', isEqualTo: customerId)
+    .where('timestamp', isGreaterThanOrEqualTo: startTime)
+    .where('timestamp', isLessThanOrEqualTo: endTime)
+    .limit(1)
+    .get()
+    .timeout(const Duration(seconds: 5), onTimeout: () {
+        throw Exception("Connection timed out.");
+    }),
             builder: (context, orderSnapshot) {
-              Map<String, dynamic> orderData = {};
-              String rawOutletId = data['outletId'] ?? "Main Store";
+  // 1. Loading State
+  if (orderSnapshot.connectionState == ConnectionState.waiting) {
+    return const Center(child: Padding(padding: EdgeInsets.all(20), child: CircularProgressIndicator()));
+  }
 
-              if (orderSnapshot.hasData && orderSnapshot.data!.docs.isNotEmpty) {
-                orderData = orderSnapshot.data!.docs.first.data() as Map<String, dynamic>;
-                var itemsRaw = orderData['items'];
-                if (itemsRaw is Map && itemsRaw.isNotEmpty) {
-                  rawOutletId = itemsRaw.values.first['outletId'] ?? rawOutletId;
-                } else if (itemsRaw is List && itemsRaw.isNotEmpty) {
-                  rawOutletId = itemsRaw[0]['outletId'] ?? rawOutletId;
-                }
-              }
+  // 2. Error State
+  if (orderSnapshot.hasError) {
+    return Center(child: Padding(padding: EdgeInsets.all(20), child: Text("Data loading issue.")));
+  }
 
-              String displayedOutlet = _getCleanOutletName(rawOutletId);
+  // 3. Data Processing State
+  Map<String, dynamic> orderData = {};
+  String rawOutletId = data['outletId'] ?? "Main Store";
 
+  if (orderSnapshot.hasData && orderSnapshot.data!.docs.isNotEmpty) {
+    orderData = orderSnapshot.data!.docs.first.data() as Map<String, dynamic>;
+    
+    var itemsRaw = orderData['items'];
+    if (itemsRaw is Map && itemsRaw.isNotEmpty) {
+      rawOutletId = itemsRaw.values.first['outletId'] ?? rawOutletId;
+    } else if (itemsRaw is List && itemsRaw.isNotEmpty) {
+      rawOutletId = itemsRaw[0]['outletId'] ?? rawOutletId;
+    }
+  }
+
+  String displayedOutlet = _getCleanOutletName(rawOutletId);
               return SingleChildScrollView(
                 controller: scrollController,
                 padding: const EdgeInsets.all(24),

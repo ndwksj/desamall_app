@@ -10,7 +10,6 @@ import 'package:desamall_app/screens/admin/profile_admin.dart';
 import 'package:desamall_app/screens/admin/receipts_admin.dart';
 import 'package:desamall_app/screens/admin/manage_users_page.dart'; 
 
-
 class HomeAdmin extends StatefulWidget {
   @override
   _HomeAdminState createState() => _HomeAdminState();
@@ -39,6 +38,8 @@ class _HomeAdminState extends State<HomeAdmin> {
             .doc(currentUser!.uid)
             .get();
             
+        if (!mounted) return;
+
         if (doc.exists && doc.data() != null) {
           final data = doc.data() as Map<String, dynamic>;
           String branchText = (data['branchAccess'] ?? 'all').toString().trim();
@@ -46,7 +47,11 @@ class _HomeAdminState extends State<HomeAdmin> {
           List<String> matchedIds = [];
 
           if (branchText != 'all') {
-            var allOutlets = await FirebaseFirestore.instance.collection('outlets').get();
+            // 🛡️ Added .limit(50) to prevent freezing when looking up outlets
+            var allOutlets = await FirebaseFirestore.instance
+                .collection('outlets')
+                .limit(50)
+                .get();
             
             print("--- DESAMALL DEBUGGING LOGS ---");
             print("Admin branchAccess string is: '$branchText'");
@@ -69,19 +74,23 @@ class _HomeAdminState extends State<HomeAdmin> {
             print("---------------------------------");
           }
 
-          setState(() {
-            _adminRole = data['role'] ?? 'admin';
-            _branchAccess = branchText;
-            _matchedOutletDocIds = matchedIds;
-            _isLoadingRole = false;
-          });
+          if (mounted) {
+            setState(() {
+              _adminRole = data['role'] ?? 'admin';
+              _branchAccess = branchText;
+              _matchedOutletDocIds = matchedIds;
+              _isLoadingRole = false;
+            });
+          }
           return;
         }
       } catch (e) {
         debugPrint("Error loading admin privileges: $e");
       }
     }
-    setState(() => _isLoadingRole = false);
+    if (mounted) {
+      setState(() => _isLoadingRole = false);
+    }
   }
 
   Widget _buildProductImage(String? path, {double? width, double? height}) {
@@ -145,7 +154,7 @@ class _HomeAdminState extends State<HomeAdmin> {
               child: Container(
                 padding: const EdgeInsets.all(3),
                 decoration: const BoxDecoration(
-                  color: Color(0xFFD32F2F), // Solid red notification badge
+                  color: Color(0xFFD32F2F), 
                   shape: BoxShape.circle,
                 ),
                 constraints: const BoxConstraints(minWidth: 16, minHeight: 16),
@@ -173,9 +182,11 @@ class _HomeAdminState extends State<HomeAdmin> {
       ProductsAdmin(
         branchAccess: _branchAccess,
         onBackToDashboard: () {
-          setState(() {
-            _selectedIndex = 0;
-          });
+          if (mounted) {
+            setState(() {
+              _selectedIndex = 0;
+            });
+          }
         },
       ),
       ReceiptsAdmin(branchAccess: _branchAccess),
@@ -194,7 +205,7 @@ class _HomeAdminState extends State<HomeAdmin> {
               flexibleSpace: Container(
                 decoration: const BoxDecoration(
                   gradient: LinearGradient(
-                    colors: [Color(0xFFE53935), Color(0xFFB71C1C)], // Bold, definite true red gradient
+                    colors: [Color(0xFFE53935), Color(0xFFB71C1C)], 
                     begin: Alignment.topCenter, end: Alignment.bottomCenter,
                   ),
                 ),
@@ -205,7 +216,9 @@ class _HomeAdminState extends State<HomeAdmin> {
               leading: _selectedIndex != 0 
                 ? IconButton(
                     icon: const Icon(Icons.arrow_back_ios_new, size: 18, color: Colors.white),
-                    onPressed: () => setState(() => _selectedIndex = 0),
+                    onPressed: () {
+                      if (mounted) setState(() => _selectedIndex = 0);
+                    },
                   ) 
                 : null,
             ),
@@ -221,11 +234,13 @@ class _HomeAdminState extends State<HomeAdmin> {
         ),
         child: BottomNavigationBar(
           currentIndex: _selectedIndex,
-          onTap: (index) => setState(() => _selectedIndex = index),
+          onTap: (index) {
+            if (mounted) setState(() => _selectedIndex = index);
+          },
           type: BottomNavigationBarType.fixed,
           backgroundColor: Colors.white,
           elevation: 0,
-          selectedItemColor: const Color(0xFFD32F2F), // Active nav icons match the true red theme
+          selectedItemColor: const Color(0xFFD32F2F), 
           unselectedItemColor: const Color(0xFF8A94A6),
           showUnselectedLabels: true,
           selectedLabelStyle: const TextStyle(fontWeight: FontWeight.w800, fontSize: 11),
@@ -340,7 +355,7 @@ class _HomeAdminState extends State<HomeAdmin> {
         _buildHorizontalOutlets(),
         const SizedBox(height: 32),
         _buildSectionHeader("Recent Catalog Feed", () {
-          setState(() => _selectedIndex = 1); 
+          if (mounted) setState(() => _selectedIndex = 1); 
         }),
         _buildHorizontalProducts(),
       ],
@@ -348,12 +363,12 @@ class _HomeAdminState extends State<HomeAdmin> {
   }
 
   Widget _buildHorizontalOutlets() {
-    Query outletQuery = FirebaseFirestore.instance.collection('outlets');
+    Query outletQuery = FirebaseFirestore.instance.collection('outlets').limit(10); // 🛡️ Stability Limit
     
     if (_branchAccess != 'all' && _matchedOutletDocIds.isNotEmpty) {
-      outletQuery = outletQuery.where(FieldPath.documentId, whereIn: _matchedOutletDocIds);
+      outletQuery = FirebaseFirestore.instance.collection('outlets').where(FieldPath.documentId, whereIn: _matchedOutletDocIds).limit(10);
     } else if (_branchAccess != 'all') {
-      outletQuery = outletQuery.where('outletId', isEqualTo: _branchAccess);
+      outletQuery = FirebaseFirestore.instance.collection('outlets').where('outletId', isEqualTo: _branchAccess).limit(10);
     }
 
     return SizedBox(
@@ -422,13 +437,13 @@ class _HomeAdminState extends State<HomeAdmin> {
   }
 
   Widget _buildHorizontalProducts() {
-    Query productQuery = FirebaseFirestore.instance.collection('products');
+    Query productQuery = FirebaseFirestore.instance.collection('products').limit(15); // 🛡️ Stability Limit
     if (_branchAccess != 'all') {
       List<String> lookups = [_branchAccess];
       if (_matchedOutletDocIds.isNotEmpty) {
         lookups.addAll(_matchedOutletDocIds);
       }
-      productQuery = productQuery.where('outletId', arrayContainsAny: lookups);
+      productQuery = FirebaseFirestore.instance.collection('products').where('outletId', arrayContainsAny: lookups).limit(15);
     }
 
     return SizedBox(
@@ -552,7 +567,9 @@ class _HomeAdminState extends State<HomeAdmin> {
     );
   }
 
-  void _showAddProductDialog() => setState(() => _selectedIndex = 1); 
+  void _showAddProductDialog() {
+    if (mounted) setState(() => _selectedIndex = 1); 
+  }
 
   void _showAddOutletDialog() {
     final nameController = TextEditingController();
@@ -590,7 +607,9 @@ class _HomeAdminState extends State<HomeAdmin> {
                       );
                       if (pickedFile != null) {
                         final bytes = await File(pickedFile.path).readAsBytes();
-                        setDialogState(() => base64Image = base64Encode(bytes));
+                        if (context.mounted) {
+                          setDialogState(() => base64Image = base64Encode(bytes));
+                        }
                       }
                     },
                     child: Container(
@@ -691,8 +710,10 @@ class _HomeAdminState extends State<HomeAdmin> {
                     );
                   }
                 } catch (e) {
-                  setDialogState(() => isSaving = false);
-                  ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text("Upload Operations Failed")));
+                  if (context.mounted) {
+                    setDialogState(() => isSaving = false);
+                    ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text("Upload Operations Failed")));
+                  }
                 }
               }, 
               child: const Text("Confirm", style: TextStyle(color: Colors.white, fontWeight: FontWeight.w700))
@@ -752,22 +773,13 @@ class OutletsManagementPage extends StatelessWidget {
                   leading: Container(
                     padding: const EdgeInsets.all(8),
                     decoration: const BoxDecoration(
-                      color: Color(0xFFFFEBEE), // Subtle soft red hue tint
-                      shape: BoxShape.circle
+                      color: Color(0xFFFFEBEE), 
+                      shape: BoxShape.circle,
                     ),
-                    child: const Icon(Icons.store, color: Color(0xFFD32F2F), size: 20)
+                    child: const Icon(Icons.storefront, color: Color(0xFFD32F2F)),
                   ),
-                  title: Text(data['name'] ?? "Unnamed Outlet", style: const TextStyle(fontWeight: FontWeight.w800, color: Color(0xFF1F2A38), fontSize: 14)),
-                  subtitle: Padding(
-                    padding: const EdgeInsets.only(top: 4),
-                    child: Text(data['address'] ?? "No address listed", style: const TextStyle(color: Color(0xFF8A94A6), fontSize: 12)),
-                  ),
-                  trailing: branchAccess == 'all' 
-                    ? IconButton(
-                        icon: const Icon(Icons.delete_outline_rounded, color: Color(0xFFD32F2F), size: 20),
-                        onPressed: () => _confirmDelete(context, id),
-                      )
-                    : null,
+                  title: Text(data['name'] ?? "No Name", style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 14)),
+                  subtitle: Text(data['address'] ?? "No Address Provided", style: const TextStyle(fontSize: 12, color: Colors.grey), maxLines: 1, overflow: TextOverflow.ellipsis),
                   onTap: () {
                     Navigator.push(context, MaterialPageRoute(
                       builder: (_) => OutletDetailsAdmin(outlet: data, docId: id)
@@ -780,28 +792,5 @@ class OutletsManagementPage extends StatelessWidget {
         },
       ),
     );
-  }
-
-  void _confirmDelete(BuildContext context, String id) async {
-    bool confirm = await showDialog(
-      context: context,
-      builder: (ctx) => AlertDialog(
-        backgroundColor: Colors.white,
-        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
-        title: const Text("Remove Location Hub?", style: TextStyle(fontWeight: FontWeight.w800, color: Color(0xFF1F2A38), fontSize: 16)),
-        content: const Text("This action cannot be undone and deletes the record entirely.", style: TextStyle(color: Color(0xFF8A94A6), fontSize: 14)),
-        actions: [
-          TextButton(onPressed: () => Navigator.pop(ctx, false), child: const Text("Cancel", style: TextStyle(color: Color(0xFF8A94A6), fontWeight: FontWeight.w700))),
-          ElevatedButton(
-            style: ElevatedButton.styleFrom(backgroundColor: const Color(0xFFD32F2F), shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8))),
-            onPressed: () => Navigator.pop(ctx, true), 
-            child: const Text("Remove", style: TextStyle(color: Colors.white, fontWeight: FontWeight.w700))
-          ),
-        ],
-      ),
-    ) ?? false;
-    if (confirm) {
-      await FirebaseFirestore.instance.collection('outlets').doc(id).delete();
-    }
   }
 }

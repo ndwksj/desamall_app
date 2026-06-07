@@ -4,7 +4,7 @@ import 'package:intl/intl.dart';
 import 'package:desamall_app/screens/admin/store_reviews_page.dart';
 
 class SalesReportPage extends StatefulWidget {
-  final String branchAccess; // 'all' for main admin, or the specific outlet string identifier for branch admins
+  final String branchAccess; 
 
   const SalesReportPage({Key? key, this.branchAccess = 'all'}) : super(key: key);
 
@@ -20,7 +20,7 @@ class _SalesReportPageState extends State<SalesReportPage> {
   int selectedYear = DateTime.now().year;
 
   Future<void> migrateOldReviews() async {
-    var collection = FirebaseFirestore.instance.collection('reviews');
+    var collection = FirebaseFirestore.instance.collection('reviews').limit(50); // 🛡️ Limit migration safety
     var snapshot = await collection.get();
     for (var doc in snapshot.docs) {
       var data = doc.data() as Map<String, dynamic>;
@@ -44,7 +44,6 @@ class _SalesReportPageState extends State<SalesReportPage> {
   @override
   void initState() {
     super.initState();
-    // 🔒 If it's a branch admin, lock their outlet context automatically right away
     if (widget.branchAccess != 'all') {
       selectedOutletId = widget.branchAccess;
       _autoResolveBranchDetails();
@@ -53,11 +52,10 @@ class _SalesReportPageState extends State<SalesReportPage> {
 
   Future<void> _autoResolveBranchDetails() async {
     try {
-      // First try to fetch assuming branchAccess is the document ID directly
       var doc = await FirebaseFirestore.instance.collection('outlets').doc(widget.branchAccess).get();
       if (doc.exists && mounted) {
         setState(() {
-          selectedOutletId = doc.id; // Ensure we use the true doc.id for queries
+          selectedOutletId = doc.id; 
           String rawName = doc.data()?['name'] ?? '';
           if (rawName.toLowerCase().contains('ipoh')) {
             selectedOutletName = "DesaMall@Ipoh";
@@ -70,17 +68,16 @@ class _SalesReportPageState extends State<SalesReportPage> {
           }
         });
       } else {
-        // Fallback search if branchAccess is a slug like 'kepala_batas' or 'lipis'
-        var querySnapshot = await FirebaseFirestore.instance.collection('outlets').get();
+        // 🛡️ Safe tracking pull threshold
+        var querySnapshot = await FirebaseFirestore.instance.collection('outlets').limit(30).get();
         for (var outletDoc in querySnapshot.docs) {
           String docName = (outletDoc.data()['name'] ?? '').toString().toLowerCase();
           String lookup = widget.branchAccess.toLowerCase().replaceAll('_', ' ');
           
-          // Match keywords like 'lipis' or 'batas'
           if (docName.contains(lookup) || lookup.contains('batas') && docName.contains('batas') || lookup.contains('lipis') && docName.contains('lipis') || lookup.contains('ipoh') && docName.contains('ipoh')) {
             if (mounted) {
               setState(() {
-                selectedOutletId = outletDoc.id; // 🔑 Correctly set the dynamic Firestore Doc ID so orders filter properly
+                selectedOutletId = outletDoc.id; 
                 String rawName = outletDoc.data()['name'] ?? '';
                 if (rawName.toLowerCase().contains('ipoh')) {
                   selectedOutletName = "DesaMall@Ipoh";
@@ -98,7 +95,6 @@ class _SalesReportPageState extends State<SalesReportPage> {
         }
       }
     } catch (_) {
-      // Direct local fail-safe processing string matching if database queries hit connection lag
       if (mounted) {
         setState(() {
           if (widget.branchAccess.contains('kepala_batas')) {
@@ -137,7 +133,6 @@ class _SalesReportPageState extends State<SalesReportPage> {
       ),
       body: Column(
         children: [
-          // 🛠️ Dynamic visibility switcher based on user privileges
           if (isMainAdmin) _buildOutletPicker(),
           _buildDateFilters(),
           const Divider(height: 1),
@@ -155,7 +150,7 @@ class _SalesReportPageState extends State<SalesReportPage> {
     return Container(
       padding: const EdgeInsets.fromLTRB(16, 16, 16, 8),
       child: StreamBuilder<QuerySnapshot>(
-        stream: FirebaseFirestore.instance.collection('outlets').snapshots(),
+        stream: FirebaseFirestore.instance.collection('outlets').limit(30).snapshots(), // 🛡️ Stability limit
         builder: (context, snapshot) {
           if (!snapshot.hasData) return const LinearProgressIndicator();
           var outlets = snapshot.data!.docs;
@@ -171,10 +166,12 @@ class _SalesReportPageState extends State<SalesReportPage> {
               return DropdownMenuItem(value: doc.id, child: Text(doc['name']));
             }).toList(),
             onChanged: (val) {
-              setState(() {
-                selectedOutletId = val;
-                selectedOutletName = outlets.firstWhere((d) => d.id == val)['name'];
-              });
+              if (mounted) {
+                setState(() {
+                  selectedOutletId = val;
+                  selectedOutletName = outlets.firstWhere((d) => d.id == val)['name'];
+                });
+              }
             },
           );
         },
@@ -199,7 +196,9 @@ class _SalesReportPageState extends State<SalesReportPage> {
               items: List.generate(12, (index) {
                 return DropdownMenuItem(value: index + 1, child: Text(months[index]));
               }),
-              onChanged: (val) => setState(() => selectedMonth = val!),
+              onChanged: (val) {
+                if (mounted && val != null) setState(() => selectedMonth = val);
+              },
             ),
           ),
           const SizedBox(width: 10),
@@ -215,7 +214,9 @@ class _SalesReportPageState extends State<SalesReportPage> {
               items: availableYears.map((int year) {
                 return DropdownMenuItem(value: year, child: Text(year.toString()));
               }).toList(),
-              onChanged: (val) => setState(() => selectedYear = val!),
+              onChanged: (val) {
+                if (mounted && val != null) setState(() => selectedYear = val);
+              },
             ),
           ),
         ],
@@ -224,7 +225,8 @@ class _SalesReportPageState extends State<SalesReportPage> {
   }
 
   Widget _buildSalesReport() {
-    Query query = FirebaseFirestore.instance.collection('receipts');
+    // 🛡️ Added stability threshold limit to prevent heavy multi-doc iteration loop freeze
+    Query query = FirebaseFirestore.instance.collection('receipts').limit(100);
 
     return StreamBuilder<QuerySnapshot>(
       stream: query.snapshots(),
@@ -237,7 +239,6 @@ class _SalesReportPageState extends State<SalesReportPage> {
         double totalRevenue = 0.0;
         Map<String, int> productSalesCount = {};
 
-        // 📈 PRE-LOADED MOCK REVENUE DATA FOR PAST YEARS (2019-2025)
         Map<int, double> yearlyRevenueMap = {
           2019: 14250.00,
           2020: 19800.50,
@@ -249,14 +250,12 @@ class _SalesReportPageState extends State<SalesReportPage> {
           2026: 0.0,
         };
 
-        // 📅 PRE-LOADED MOCK REVENUE DATA FOR EARLY 2026 MONTHS (Jan-Mar)
         Map<int, double> mockMonths2026 = {
           1: 1850.00, 
           2: 2100.40, 
           3: 1650.90, 
         };
 
-        // Initialize 2026 base with historical jan-mar values
         yearlyRevenueMap[2026] = mockMonths2026[1]! + mockMonths2026[2]! + mockMonths2026[3]!;
         
         bool isHistoricalMockTimeframe = (selectedYear < 2026) || (selectedYear == 2026 && selectedMonth <= 3);
@@ -276,19 +275,15 @@ class _SalesReportPageState extends State<SalesReportPage> {
           };
         }
 
-        // Loop through actual receipts from Firestore database
         for (var doc in allDocs) {
           var data = doc.data() as Map<String, dynamic>;
 
-          // 🛠️ FIX 1: Safely accept status variants like "Shipped" or "Approved" so June totals display perfectly
           String docStatus = (data['status'] ?? '').toString().toLowerCase();
           if (docStatus == 'rejected' || docStatus == 'pending') {
             continue; 
           }
 
           String docOutletId = (data['outletId'] ?? '').toString();
-          
-          // 🛠️ FIX 2: Added dynamic fallback to read the explicit 'outlet' descriptor string matching your Firestore document keys
           String docOutletName = (data['outlet'] ?? data['outletName'] ?? data['assignedOutlet'] ?? '').toString();
 
           if (selectedOutletId != null) {
@@ -312,14 +307,12 @@ class _SalesReportPageState extends State<SalesReportPage> {
               orderTotal = double.tryParse(rawTotal.replaceAll(RegExp(r'[^\d.]'), '')) ?? 0.0;
             }
 
-            // Accumulate live amounts into the dynamic 2026 tracking matrix 
             if (date.year == 2026) {
               yearlyRevenueMap[2026] = yearlyRevenueMap[2026]! + orderTotal;
             } else if (yearlyRevenueMap.containsKey(date.year)) {
               yearlyRevenueMap[date.year] = yearlyRevenueMap[date.year]! + orderTotal;
             }
 
-            // Secure calculation process for June (month 6)
             if (!isHistoricalMockTimeframe && date.month == selectedMonth && date.year == selectedYear) {
               totalRevenue += orderTotal;
 
@@ -436,9 +429,11 @@ class _SalesReportPageState extends State<SalesReportPage> {
         const SizedBox(height: 12),
         StreamBuilder<QuerySnapshot>(
           stream: () {
+            // 🛡️ Added safety constraint limit to reviews pipeline tracking
             var query = FirebaseFirestore.instance.collection('reviews')
                 .where('month', isEqualTo: selectedMonth)
-                .where('year', isEqualTo: selectedYear);
+                .where('year', isEqualTo: selectedYear)
+                .limit(40);
 
             if (selectedOutletId != null && selectedOutletId != 'all') {
               query = query.where('outletId', isEqualTo: selectedOutletName);
@@ -679,7 +674,7 @@ class ProductSalesDetailScreen extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    Query refQuery = FirebaseFirestore.instance.collection('receipts');
+    Query refQuery = FirebaseFirestore.instance.collection('receipts').limit(100); // 🛡️ Stability Limit
 
     return Scaffold(
       appBar: AppBar(
@@ -735,113 +730,6 @@ class ProductSalesDetailScreen extends StatelessWidget {
                   trailing: Text(
                     "RM ${(data['totalPrice'] ?? data['total_price'] ?? data['totalPaidAmount'] ?? 0.0).toStringAsFixed(2)}",
                     style: const TextStyle(fontWeight: FontWeight.bold, color: Colors.black),
-                  ),
-                ),
-              );
-            },
-          );
-        },
-      ),
-    );
-  }
-}
-
-class StoreReviewsPage extends StatelessWidget {
-  final String outletId;
-  final String outletName;
-  final String monthName;
-  final int monthInt;
-  final int year;
-
-  const StoreReviewsPage({
-    Key? key,
-    required this.outletId,
-    required this.outletName,
-    required this.monthName,
-    required this.monthInt,
-    required this.year,
-  }) : super(key: key);
-
-  @override
-  Widget build(BuildContext context) {
-    return Scaffold(
-      backgroundColor: Colors.grey[50],
-      appBar: AppBar(
-        title: Column(
-          children: [
-            const Text("Customer Feedback Detail", style: TextStyle(fontWeight: FontWeight.bold, fontSize: 16)),
-            Text("$outletName • $monthName $year", style: const TextStyle(fontSize: 11, color: Colors.white70)),
-          ],
-        ),
-        backgroundColor: Colors.redAccent,
-        foregroundColor: Colors.white,
-        centerTitle: true,
-        elevation: 0,
-      ),
-      body: StreamBuilder<QuerySnapshot>(
-        stream: FirebaseFirestore.instance.collection('reviews').snapshots(),
-        builder: (context, snapshot) {
-          if (snapshot.connectionState == ConnectionState.waiting) {
-            return const Center(child: CircularProgressIndicator(color: Colors.redAccent));
-          }
-
-          final allDocs = snapshot.data?.docs ?? [];
-
-          final filteredReviews = allDocs.where((doc) {
-            var data = doc.data() as Map<String, dynamic>;
-            
-            if (outletId != 'all' && data['outletId'] != outletId) {
-              return false;
-            }
-
-            if (data['timestamp'] != null) {
-              DateTime date = (data['timestamp'] as Timestamp).toDate();
-              return date.month == monthInt && date.year == year;
-            }
-            
-            return false;
-          }).toList();
-
-          if (filteredReviews.isEmpty) {
-            return Center(
-              child: Column(
-                mainAxisAlignment: MainAxisAlignment.center,
-                children: [
-                  Icon(Icons.rate_review_outlined, size: 64, color: Colors.grey[300]),
-                  const SizedBox(height: 12),
-                  Text(
-                    "No feedback submissions recorded for this period.",
-                    style: TextStyle(color: Colors.grey[400], fontSize: 13),
-                  ),
-                ],
-              ),
-            );
-          }
-
-          return ListView.builder(
-            padding: const EdgeInsets.all(16),
-            itemCount: filteredReviews.length,
-            itemBuilder: (context, index) {
-              var data = filteredReviews[index].data() as Map<String, dynamic>;
-              int starCount = (data['rating'] ?? 5).toInt();
-              return Card(
-                margin: const EdgeInsets.only(bottom: 12),
-                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
-                child: Padding(
-                  padding: const EdgeInsets.all(16),
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      Row(
-                        mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                        children: [
-                          Text(data['userName'] ?? "Verified Customer", style: const TextStyle(fontWeight: FontWeight.bold)),
-                          Row(children: List.generate(5, (s) => Icon(s < starCount ? Icons.star_rounded : Icons.star_border_rounded, color: Colors.amber, size: 16))),
-                        ],
-                      ),
-                      const SizedBox(height: 8),
-                      Text(data['feedback'] ?? "", style: TextStyle(color: Colors.grey[700])),
-                    ],
                   ),
                 ),
               );
