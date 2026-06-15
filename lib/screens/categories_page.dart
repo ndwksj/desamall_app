@@ -11,6 +11,7 @@ import 'food_supplement_page.dart';
 import 'product_detail_page.dart';
 import 'cart_page.dart'; 
 import '../cart.dart';   
+import 'dart:convert'; // 🔑 Added to decode raw image strings from the admin side safely
 
 class CategoriesPage extends StatelessWidget {
   final String outletId;
@@ -219,6 +220,31 @@ class ProductSearchDelegate extends SearchDelegate {
     return 0;
   }
 
+  // Helper image layout visual engine to cleanly load images on your results grid
+  Widget _displayGridProductImage(String imageUrl) {
+    if (imageUrl.isEmpty) {
+      return const Center(child: Icon(Icons.shopping_bag_outlined, color: Colors.redAccent, size: 40));
+    }
+    try {
+      if (imageUrl.startsWith('http')) {
+        return Image.network(imageUrl, fit: BoxFit.cover, width: double.infinity, height: double.infinity);
+      }
+      if (imageUrl.startsWith('assets/')) {
+        return Image.asset(imageUrl, fit: BoxFit.cover, width: double.infinity, height: double.infinity);
+      }
+      String cleanBase64 = imageUrl.contains(',') ? imageUrl.split(',').last : imageUrl;
+      return Image.memory(
+        base64Decode(cleanBase64.trim()), 
+        fit: BoxFit.cover,
+        width: double.infinity,
+        height: double.infinity,
+        errorBuilder: (context, error, stackTrace) => const Center(child: Icon(Icons.shopping_bag_outlined, color: Colors.redAccent, size: 40)),
+      );
+    } catch (e) {
+      return const Center(child: Icon(Icons.shopping_bag_outlined, color: Colors.redAccent, size: 40));
+    }
+  }
+
   @override
   List<Widget>? buildActions(BuildContext context) => [IconButton(icon: const Icon(Icons.clear), onPressed: () => query = "")];
   @override
@@ -257,27 +283,28 @@ class ProductSearchDelegate extends SearchDelegate {
           return matchesSearch && matchesPrice && matchesColor;
         }).toList();
 
-        // 🔑 UPDATED: Professional sorting logic.
-        // Sort items from Cheaper to Expensive (Ascending order) whenever products are evaluated.
+        // 🔑 FIXED POPULARITY FILTER COUPLING:
+        // Prioritizes popular sorting directly when selected, making items rearrange accurately!
         results.sort((a, b) {
           final dataA = a.data() as Map<String, dynamic>;
           final dataB = b.data() as Map<String, dynamic>;
-          
-          double priceA = _forceDouble(dataA['price']);
-          double priceB = _forceDouble(dataB['price']);
 
-          // Compare prices first (Lowest price comes first)
-          int priceCompare = priceA.compareTo(priceB);
-          if (priceCompare != 0) {
-            return priceCompare;
+          // Read transaction tracking numbers ('revenue' or 'salesCount')
+          int metricA = _forceInt(dataA['salesCount'] ?? dataA['revenue']);
+          int metricB = _forceInt(dataB['salesCount'] ?? dataB['revenue']);
+
+          if (sortFilter == "Least Popular") {
+            int comp = metricA.compareTo(metricB);
+            if (comp != 0) return comp;
+          } else if (sortFilter == "Popular") {
+            int comp = metricB.compareTo(metricA);
+            if (comp != 0) return comp;
           }
 
-          // Secondary sort: If prices match exactly, sort by selected popularity settings
-          int rA = _forceInt(dataA['revenue']); 
-          int rB = _forceInt(dataB['revenue']);
-
-          if (sortFilter == "Least Popular") return rA.compareTo(rB);
-          return rB.compareTo(rA); 
+          // Fallback tie-breaker: sort by price
+          double priceA = _forceDouble(dataA['price']);
+          double priceB = _forceDouble(dataB['price']);
+          return priceA.compareTo(priceB);
         });
 
         final topResults = results.take(10).toList();
@@ -297,13 +324,16 @@ class ProductSearchDelegate extends SearchDelegate {
             final doc = topResults[index];
             final data = doc.data() as Map<String, dynamic>;
             
+            // Look up alternative variant image fields securely
+            String resolvedImage = data['imageUrl'] ?? data['image'] ?? '';
+
             return GestureDetector(
               onTap: () {
                 Navigator.push(context, MaterialPageRoute(builder: (context) => ProductDetailPage(
                   id: doc.id, 
                   name: data['name'] ?? '', 
                   price: data['price'].toString(), 
-                  image: data['imageUrl'] ?? '', 
+                  image: resolvedImage, 
                   outletId: outletId, 
                   stock: _forceInt(data['stock']) 
                 )));
@@ -326,8 +356,9 @@ class ProductSearchDelegate extends SearchDelegate {
                               color: Colors.redAccent.withOpacity(0.05),
                               borderRadius: const BorderRadius.vertical(top: Radius.circular(12)),
                             ),
-                            child: const Center(
-                              child: Icon(Icons.shopping_bag_outlined, color: Colors.redAccent, size: 40),
+                            child: ClipRRect(
+                              borderRadius: const BorderRadius.vertical(top: Radius.circular(12)),
+                              child: _displayGridProductImage(resolvedImage), // 🔑 UPDATED: Load base64/network items safely
                             ),
                           ),
                           Positioned(
@@ -335,7 +366,7 @@ class ProductSearchDelegate extends SearchDelegate {
                             child: Container(
                               padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
                               decoration: BoxDecoration(color: Colors.black.withOpacity(0.7), borderRadius: BorderRadius.circular(8)),
-                              child: Text("RM ${data['price']}", style: const TextStyle(color: Colors.white, fontSize: 11, fontWeight: FontWeight.bold)),
+                              child: Text("RM ${_forceDouble(data['price']).toStringAsFixed(2)}", style: const TextStyle(color: Colors.white, fontSize: 11, fontWeight: FontWeight.bold)),
                             ),
                           ),
                         ],

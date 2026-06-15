@@ -116,18 +116,37 @@ class _ProductsAdminState extends State<ProductsAdmin> {
 
     if (res is String && res != '-1') {
       currentScannedBarcode = res;
-      var doc = await FirebaseFirestore.instance.collection('products_master').doc(res).get();
+      
+      // 🔑 THE OMNI-QUERY DYNAMIC FIX: First query main 'products' collection by field attributes
+      var productQuery = await FirebaseFirestore.instance
+          .collection('products')
+          .where('barcode', isEqualTo: res)
+          .limit(1)
+          .get();
 
-      if (doc.exists) {
-        var data = doc.data()!;
+      if (productQuery.docs.isNotEmpty) {
+        var data = productQuery.docs.first.data();
         setDialogState(() {
           nameC.text = data['name'] ?? "";
           priceC.text = data['price']?.toString() ?? "";
           updateImage(data['imageUrl']);
         });
-        ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text("Local product found! Details filled."), backgroundColor: Colors.black87));
+        ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text("Product details found in store database!"), backgroundColor: Colors.black87));
       } else {
-        ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text("New Barcode: $res. Please enter details manually."), backgroundColor: Colors.black87));
+        // Fallback structural check to secondary products_master reference logs
+        var doc = await FirebaseFirestore.instance.collection('products_master').doc(res).get();
+
+        if (doc.exists) {
+          var data = doc.data()!;
+          setDialogState(() {
+            nameC.text = data['name'] ?? "";
+            priceC.text = data['price']?.toString() ?? "";
+            updateImage(data['imageUrl']);
+          });
+          ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text("Local product found! Details filled."), backgroundColor: Colors.black87));
+        } else {
+          ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text("New Barcode: $res. Please enter details manually."), backgroundColor: Colors.black87));
+        }
       }
     }
   }

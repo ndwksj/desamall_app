@@ -225,11 +225,9 @@ class _SalesReportPageState extends State<SalesReportPage> {
   }
 
   Widget _buildSalesReport() {
-    // 🛡️ Added stability threshold limit to prevent heavy multi-doc iteration loop freeze
-    Query query = FirebaseFirestore.instance.collection('receipts').limit(100);
-
+    // 🛡️ Listens to orders collection to sync mobile shopping transactions securely
     return StreamBuilder<QuerySnapshot>(
-      stream: query.snapshots(),
+      stream: FirebaseFirestore.instance.collection('orders').snapshots(),
       builder: (context, snapshot) {
         if (snapshot.connectionState == ConnectionState.waiting) {
           return const Center(child: CircularProgressIndicator(color: Colors.redAccent));
@@ -275,6 +273,7 @@ class _SalesReportPageState extends State<SalesReportPage> {
           };
         }
 
+        // Loop through orders data
         for (var doc in allDocs) {
           var data = doc.data() as Map<String, dynamic>;
 
@@ -295,10 +294,27 @@ class _SalesReportPageState extends State<SalesReportPage> {
             }
           }
 
-          Timestamp? timestamp = data['timestamp'] as Timestamp?;
-          if (timestamp != null) {
-            DateTime date = timestamp.toDate();
+          // 🔑 DYNAMIC DATE PARSING METRIC ENGINE
+          DateTime? date;
+          if (data['timestamp'] != null && data['timestamp'] is Timestamp) {
+            date = (data['timestamp'] as Timestamp).toDate();
+          } else if (data['submissionDate'] != null) {
+            try {
+              // Extract numeric fragments from custom string logs (e.g., "7/6/2026 at 21:44")
+              String rawDateStr = data['submissionDate'].toString().split(' at ').first.trim();
+              List<String> parts = rawDateStr.split('/');
+              if (parts.length == 3) {
+                int day = int.parse(parts[0]);
+                int month = int.parse(parts[1]);
+                int year = int.parse(parts[2]);
+                date = DateTime(year, month, day);
+              }
+            } catch (_) {
+              date = null;
+            }
+          }
 
+          if (date != null) {
             double orderTotal = 0.0;
             var rawTotal = data['totalPrice'] ?? data['total_price'] ?? data['totalPaidAmount'] ?? data['subtotal'] ?? 0.0;
             if (rawTotal is num) {
@@ -351,7 +367,8 @@ class _SalesReportPageState extends State<SalesReportPage> {
             if (topProducts.isEmpty)
               _buildEmptyState("No sales found for ${months[selectedMonth - 1]} $selectedYear")
             else
-              ...topProducts.take(5).map((name) => _buildSalesTile(name, productSalesCount[name]!, isHistoricalMockTimeframe)).toList(),
+              // 🔑 FIXED UPDATED LINE: Replaced .take(5) with .take(10) to display the requested top 10 items list!
+              ...topProducts.take(10).map((name) => _buildSalesTile(name, productSalesCount[name]!, isHistoricalMockTimeframe)).toList(),
 
             const SizedBox(height: 24),
             const Divider(),
@@ -429,7 +446,6 @@ class _SalesReportPageState extends State<SalesReportPage> {
         const SizedBox(height: 12),
         StreamBuilder<QuerySnapshot>(
           stream: () {
-            // 🛡️ Added safety constraint limit to reviews pipeline tracking
             var query = FirebaseFirestore.instance.collection('reviews')
                 .where('month', isEqualTo: selectedMonth)
                 .where('year', isEqualTo: selectedYear)
@@ -674,7 +690,8 @@ class ProductSalesDetailScreen extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    Query refQuery = FirebaseFirestore.instance.collection('receipts').limit(100); // 🛡️ Stability Limit
+    // 🔑 UPDATED LINE: Direct pipeline to the transactions order data array mapping tracker
+    Query refQuery = FirebaseFirestore.instance.collection('orders').limit(100); 
 
     return Scaffold(
       appBar: AppBar(
@@ -689,9 +706,21 @@ class ProductSalesDetailScreen extends StatelessWidget {
 
           final docs = snapshot.data!.docs.where((doc) {
             var data = doc.data() as Map<String, dynamic>;
-            if (data['timestamp'] == null) return false;
+            
+            DateTime? date;
+            if (data['timestamp'] != null && data['timestamp'] is Timestamp) {
+              date = (data['timestamp'] as Timestamp).toDate();
+            } else if (data['submissionDate'] != null) {
+              try {
+                String rawDateStr = data['submissionDate'].toString().split(' at ').first.trim();
+                List<String> parts = rawDateStr.split('/');
+                if (parts.length == 3) {
+                  date = DateTime(int.parse(parts[2]), int.parse(parts[1]), int.parse(parts[0]));
+                }
+              } catch (_) {}
+            }
 
-            DateTime date = (data['timestamp'] as Timestamp).toDate();
+            if (date == null) return false;
             bool dateMatch = date.month == monthInt && date.year == year;
             bool nameMatch = false;
 
@@ -718,7 +747,17 @@ class ProductSalesDetailScreen extends StatelessWidget {
             itemCount: docs.length,
             itemBuilder: (context, index) {
               var data = docs[index].data() as Map<String, dynamic>;
-              DateTime date = (data['timestamp'] as Timestamp).toDate();
+              
+              DateTime date = DateTime.now();
+              if (data['timestamp'] != null && data['timestamp'] is Timestamp) {
+                date = (data['timestamp'] as Timestamp).toDate();
+              } else if (data['submissionDate'] != null) {
+                try {
+                  String rawDateStr = data['submissionDate'].toString().split(' at ').first.trim();
+                  List<String> parts = rawDateStr.split('/');
+                  date = DateTime(int.parse(parts[2]), int.parse(parts[1]), int.parse(parts[0]));
+                } catch (_) {}
+              }
 
               return Card(
                 margin: const EdgeInsets.only(bottom: 10),

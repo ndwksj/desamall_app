@@ -273,6 +273,11 @@ class _ReceiptsHistoryCustomerState extends State<ReceiptsHistoryCustomer> {
               assignedOutlet = outletMap[fallbackId.toLowerCase()] ?? (fallbackId.isNotEmpty ? fallbackId : "Main Store");
             }
 
+            // Timeline Boolean Evaluators
+            bool isApproved = currentStatus == "Approved" || currentStatus == "Shipped" || currentStatus == "Delivered";
+            bool isShipped = currentStatus == "Shipped" || currentStatus == "Delivered";
+            bool isDelivered = currentStatus == "Delivered";
+
             return SingleChildScrollView(
               controller: scrollController,
               padding: const EdgeInsets.all(24),
@@ -339,6 +344,53 @@ class _ReceiptsHistoryCustomerState extends State<ReceiptsHistoryCustomer> {
                   orderSnapshot.connectionState == ConnectionState.waiting
                       ? const Padding(padding: EdgeInsets.symmetric(vertical: 20), child: Center(child: CircularProgressIndicator(color: Colors.redAccent)))
                       : _buildOrderItemsSection(orderData, data),
+                  
+                  // 🎯 NEW EMBEDDED INLINE TIMELINE: Only displays for non-rejected items
+                  if (currentStatus != "Rejected") ...[
+                    const SizedBox(height: 30),
+                    const Text("Order Tracking Status", style: TextStyle(fontWeight: FontWeight.bold, fontSize: 15, color: Colors.black87)),
+                    const SizedBox(height: 15),
+                    Container(
+                      padding: const EdgeInsets.all(16),
+                      decoration: BoxDecoration(
+                        color: Colors.grey.shade50,
+                        borderRadius: BorderRadius.circular(16),
+                        border: Border.all(color: Colors.grey.shade200),
+                      ),
+                      child: Column(
+                        children: [
+                          _buildEmbeddedStep(
+                            title: "Receipt Uploaded",
+                            subtitle: "Payment received by the system.",
+                            isCompleted: true,
+                            isLast: false,
+                          ),
+                          _buildEmbeddedStep(
+                            title: "Payment Verified",
+                            subtitle: isApproved ? "Admin has verified your payment." : "Waiting for admin verification.",
+                            isCompleted: isApproved,
+                            isLast: false,
+                          ),
+                          _buildEmbeddedStep(
+                            title: isSelfPickup ? "Ready for Collection" : "Order Shipped",
+                            subtitle: isShipped 
+                                ? (isSelfPickup ? "Your items are ready at counter." : "Your items are with the courier.") 
+                                : (isSelfPickup ? "Preparing items at outlet." : "Preparing your package."),
+                            isCompleted: isShipped,
+                            isLast: false,
+                          ),
+                          _buildEmbeddedStep(
+                            title: isSelfPickup ? "Collected" : "Delivered",
+                            subtitle: isDelivered 
+                                ? (isSelfPickup ? "Thank you for visiting us!" : "Enjoy your items!") 
+                                : (isSelfPickup ? "Awaiting your pickup store arrival." : "Courier is arriving soon."),
+                            isCompleted: isDelivered,
+                            isLast: true,
+                          ),
+                        ],
+                      ),
+                    ),
+                  ],
                   const SizedBox(height: 30),
                 ],
               ),
@@ -380,6 +432,50 @@ class _ReceiptsHistoryCustomerState extends State<ReceiptsHistoryCustomer> {
             child: Row(mainAxisAlignment: MainAxisAlignment.spaceBetween, children: [Expanded(child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [Text(name, style: const TextStyle(fontWeight: FontWeight.w600, fontSize: 13)), const SizedBox(height: 2), Text("Qty: $quantity", style: TextStyle(color: Colors.grey.shade600, fontSize: 12))])), Text("RM ${(price * quantity).toStringAsFixed(2)}", style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 13, color: Colors.black87))]),
           );
         },
+      ),
+    );
+  }
+
+  // 🎯 HELPER WIDGET: Draws individual inline layout sequence line nodes beautifully
+  Widget _buildEmbeddedStep({required String title, required String subtitle, required bool isCompleted, required bool isLast}) {
+    return IntrinsicHeight(
+      child: Row(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Column(
+            children: [
+              Container(
+                width: 20, height: 20,
+                decoration: BoxDecoration(
+                  color: isCompleted ? Colors.green : Colors.white,
+                  shape: BoxShape.circle,
+                  border: Border.all(color: isCompleted ? Colors.green : Colors.grey[300]!, width: 2),
+                ),
+                child: isCompleted ? const Icon(Icons.check, size: 12, color: Colors.white) : null,
+              ),
+              if (!isLast)
+                Expanded(
+                  child: Container(
+                    width: 2.5, 
+                    margin: const EdgeInsets.symmetric(vertical: 3), 
+                    color: isCompleted ? Colors.green : Colors.grey[200],
+                  ),
+                ),
+            ],
+          ),
+          const SizedBox(width: 15),
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(title, style: TextStyle(fontWeight: FontWeight.bold, fontSize: 14, color: isCompleted ? Colors.black87 : Colors.grey[500])),
+                const SizedBox(height: 4),
+                Text(subtitle, style: TextStyle(fontSize: 12, color: isCompleted ? Colors.grey[600] : Colors.grey[400])),
+                if (!isLast) const SizedBox(height: 20),
+              ],
+            ),
+          ),
+        ],
       ),
     );
   }

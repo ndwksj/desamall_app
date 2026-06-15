@@ -191,7 +191,11 @@ class _CheckoutPageState extends State<CheckoutPage> {
   }
 
   void _showAddAddressDialog() {
-    final TextEditingController addressController = TextEditingController();
+    // 🏠 Structured input controllers matching SV feedback
+    final streetController = TextEditingController();
+    final cityController = TextEditingController();
+    final stateController = TextEditingController();
+    final postalCodeController = TextEditingController();
 
     showDialog(
       context: context,
@@ -199,11 +203,52 @@ class _CheckoutPageState extends State<CheckoutPage> {
         return AlertDialog(
           shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(15)),
           title: const Text("Add Shipping Address", style: TextStyle(fontWeight: FontWeight.bold)),
-          content: TextField(
-            controller: addressController,
-            decoration: const InputDecoration(
-              hintText: "Enter your full delivery address",
-              focusedBorder: UnderlineInputBorder(borderSide: BorderSide(color: Colors.redAccent)),
+          content: SingleChildScrollView(
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                const SizedBox(height: 8),
+                TextField(
+                  controller: streetController,
+                  decoration: const InputDecoration(
+                    labelText: "Street Address",
+                    focusedBorder: UnderlineInputBorder(borderSide: BorderSide(color: Colors.redAccent)),
+                  ),
+                ),
+                const SizedBox(height: 12),
+                Row(
+                  children: [
+                    Expanded(
+                      child: TextField(
+                        controller: cityController,
+                        decoration: const InputDecoration(
+                          labelText: "City",
+                          focusedBorder: UnderlineInputBorder(borderSide: BorderSide(color: Colors.redAccent)),
+                        ),
+                      ),
+                    ),
+                    const SizedBox(width: 12),
+                    Expanded(
+                      child: TextField(
+                        controller: postalCodeController,
+                        keyboardType: TextInputType.number,
+                        decoration: const InputDecoration(
+                          labelText: "Postal Code",
+                          focusedBorder: UnderlineInputBorder(borderSide: BorderSide(color: Colors.redAccent)),
+                        ),
+                      ),
+                    ),
+                  ],
+                ),
+                const SizedBox(height: 12),
+                TextField(
+                  controller: stateController,
+                  decoration: const InputDecoration(
+                    labelText: "State / Province",
+                    focusedBorder: UnderlineInputBorder(borderSide: BorderSide(color: Colors.redAccent)),
+                  ),
+                ),
+              ],
             ),
           ),
           actions: [
@@ -214,8 +259,14 @@ class _CheckoutPageState extends State<CheckoutPage> {
             ElevatedButton(
               style: ElevatedButton.styleFrom(backgroundColor: Colors.redAccent),
               onPressed: () async {
-                String newAddress = addressController.text.trim();
-                if (newAddress.isNotEmpty && user != null) {
+                String street = streetController.text.trim();
+                String city = cityController.text.trim();
+                String state = stateController.text.trim();
+                String postal = postalCodeController.text.trim();
+
+                if (street.isNotEmpty && city.isNotEmpty && state.isNotEmpty && postal.isNotEmpty && user != null) {
+                  // 🧵 Combine into a unified string so that no current layout frameworks break
+                  String newAddress = "$street, $postal $city, $state";
                   try {
                     DocumentReference userRef = FirebaseFirestore.instance.collection('users').doc(user!.uid);
                     await userRef.update({
@@ -234,6 +285,10 @@ class _CheckoutPageState extends State<CheckoutPage> {
                   } catch (e) {
                     debugPrint("Error saving address to profile: $e");
                   }
+                } else {
+                  ScaffoldMessenger.of(context).showSnackBar(
+                    const SnackBar(content: Text("Please fill up all address fields!")),
+                  );
                 }
               },
               child: const Text("Save Address", style: TextStyle(color: Colors.white)),
@@ -315,10 +370,7 @@ class _CheckoutPageState extends State<CheckoutPage> {
       _selectedAddress = addresses[0];
     }
 
-    // 🔑 Dynamic assessment of active shipping cost tier matching rules
     double currentActiveDeliveryFee = _calculateDynamicDeliveryFee(_selectedAddress);
-
-    // Dynamic point deduction update tracking helper using local updated totals
     double totalSummary = (_localSubtotal + currentActiveDeliveryFee) - _pointsDiscount;
     final String selectedOutlet = ModalRoute.of(context)?.settings.arguments as String? ?? "DesaMall Outlet";
 
@@ -332,7 +384,7 @@ class _CheckoutPageState extends State<CheckoutPage> {
       body: SingleChildScrollView(
         padding: const EdgeInsets.all(16),
         child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start, // 🛠️ FIXED TYPO HERE
+          crossAxisAlignment: CrossAxisAlignment.start, 
           children: [
             _buildHeader("Shipping Address"),
             Card(
@@ -375,7 +427,7 @@ class _CheckoutPageState extends State<CheckoutPage> {
                             _pointsDiscount = value ? _userPoints : 0.0;
                           });
                         }
-                      : null, // Keeps the switch beautifully disabled if point balance is 0
+                      : null,
                 ),
               ),
             ),
@@ -417,7 +469,6 @@ class _CheckoutPageState extends State<CheckoutPage> {
                       child: Row(
                         crossAxisAlignment: CrossAxisAlignment.center,
                         children: [
-                          // 📦 Premium E-Commerce Aspect Image Framework Frame Container
                           Container(
                             width: 65,
                             height: 65,
@@ -441,7 +492,6 @@ class _CheckoutPageState extends State<CheckoutPage> {
                                       return Image.asset(imagePath, fit: BoxFit.contain, errorBuilder: (c, e, s) => const Icon(Icons.image_not_supported, size: 24));
                                     }
                                     
-                                    // Base64 Multi-Format Decryption String Block Engine
                                     String cleanBase64 = imagePath.contains(',') ? imagePath.split(',').last : imagePath;
                                     return Image.memory(
                                       base64Decode(cleanBase64.trim()),
@@ -457,7 +507,6 @@ class _CheckoutPageState extends State<CheckoutPage> {
                           ),
                           const SizedBox(width: 14),
                           
-                          // Description & Info Column Label Details Block
                           Expanded(
                             child: Column(
                               crossAxisAlignment: CrossAxisAlignment.start,
@@ -476,7 +525,6 @@ class _CheckoutPageState extends State<CheckoutPage> {
                                 ),
                                 const SizedBox(height: 8),
                                 
-                                // 🔄 Interactive E-Commerce Inline Counter Control Widget Row Box
                                 Row(
                                   children: [
                                     GestureDetector(
@@ -518,7 +566,6 @@ class _CheckoutPageState extends State<CheckoutPage> {
                           ),
                           const SizedBox(width: 8),
                           
-                          // Absolute aggregate product cost block layout
                           Text(
                             "RM ${(price * quantity).toStringAsFixed(2)}",
                             style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 14, color: Colors.black87),

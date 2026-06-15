@@ -310,42 +310,126 @@ class _ProfilePageState extends State<ProfilePage> {
   }
 
   void _openAddressSheet({String? oldAddress, int? index, List? allAddresses}) {
-    TextEditingController addressController = TextEditingController(text: oldAddress);
+    final streetController = TextEditingController();
+    final cityController = TextEditingController();
+    final stateController = TextEditingController();
+    final postalCodeController = TextEditingController();
+
+    // Parse the existing comma-separated address cleanly back into the new layout components
+    if (oldAddress != null) {
+      List<String> parts = oldAddress.split(',');
+      if (parts.length >= 1) streetController.text = parts[0].trim();
+      if (parts.length >= 2) {
+        String postalAndCity = parts[1].trim();
+        List<String> subParts = postalAndCity.split(' ');
+        if (subParts.length >= 2) {
+          postalCodeController.text = subParts[0].trim();
+          cityController.text = subParts.sublist(1).join(' ').trim();
+        } else {
+          cityController.text = postalAndCity;
+        }
+      }
+      if (parts.length >= 3) stateController.text = parts[2].trim();
+    }
+
     showModalBottomSheet(
       context: context,
       isScrollControlled: true,
+      backgroundColor: Colors.white,
       shape: const RoundedRectangleBorder(borderRadius: BorderRadius.vertical(top: Radius.circular(20))),
       builder: (context) => Padding(
         padding: EdgeInsets.only(bottom: MediaQuery.of(context).viewInsets.bottom, left: 20, right: 20, top: 20),
-        child: Column(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            Text(oldAddress == null ? "Add New Address" : "Edit Address", style: const TextStyle(fontSize: 18, fontWeight: FontWeight.bold)),
-            const SizedBox(height: 15),
-            TextField(controller: addressController, decoration: const InputDecoration(border: OutlineInputBorder(), hintText: "Enter full address..."), maxLines: 3),
-            const SizedBox(height: 15),
-            SizedBox(
-              width: double.infinity,
-              child: ElevatedButton(
-                style: ElevatedButton.styleFrom(backgroundColor: Colors.redAccent),
-                onPressed: () async {
-                  String newAddr = addressController.text.trim();
-                  
-                  if (newAddr.isEmpty) {
-                    _showFloatingWarning("Address field cannot be empty");
-                    return; 
-                  }
-
-                  List updatedList = List.from(allAddresses ?? []);
-                  if (index != null) { updatedList[index] = newAddr; } else { updatedList.add(newAddr); }
-                  await FirebaseFirestore.instance.collection('users').doc(user?.uid).update({'addresses': updatedList});
-                  if (mounted) Navigator.pop(context);
-                },
-                child: const Text("Save Address", style: TextStyle(color: Colors.white)),
+        child: SingleChildScrollView(
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Align(
+                alignment: Alignment.center,
+                child: Container(width: 40, height: 4, decoration: BoxDecoration(color: Colors.grey[300], borderRadius: BorderRadius.circular(10))),
               ),
-            ),
-            const SizedBox(height: 20),
-          ],
+              const SizedBox(height: 15),
+              Text(oldAddress == null ? "Add New Address" : "Edit Address", style: const TextStyle(fontSize: 18, fontWeight: FontWeight.bold)),
+              const Divider(height: 25),
+              
+              TextField(
+                controller: streetController, 
+                decoration: InputDecoration(
+                  labelText: "Street Address", 
+                  hintText: "Enter street details...",
+                  border: const OutlineInputBorder(),
+                  focusedBorder: OutlineInputBorder(borderSide: BorderSide(color: Colors.redAccent.withOpacity(0.7)))
+                )
+              ),
+              const SizedBox(height: 14),
+              
+              Row(
+                children: [
+                  Expanded(
+                    child: TextField(
+                      controller: cityController, 
+                      decoration: InputDecoration(
+                        labelText: "City", 
+                        border: const OutlineInputBorder(),
+                        focusedBorder: OutlineInputBorder(borderSide: BorderSide(color: Colors.redAccent.withOpacity(0.7)))
+                      )
+                    ),
+                  ),
+                  const SizedBox(width: 12),
+                  Expanded(
+                    child: TextField(
+                      controller: postalCodeController, 
+                      keyboardType: TextInputType.number,
+                      decoration: InputDecoration(
+                        labelText: "Postal Code", 
+                        border: const OutlineInputBorder(),
+                        focusedBorder: OutlineInputBorder(borderSide: BorderSide(color: Colors.redAccent.withOpacity(0.7)))
+                      )
+                    ),
+                  ),
+                ],
+              ),
+              const SizedBox(height: 14),
+              
+              TextField(
+                controller: stateController, 
+                decoration: InputDecoration(
+                  labelText: "State / Province", 
+                  border: const OutlineInputBorder(),
+                  focusedBorder: OutlineInputBorder(borderSide: BorderSide(color: Colors.redAccent.withOpacity(0.7)))
+                )
+              ),
+              const SizedBox(height: 20),
+              
+              SizedBox(
+                width: double.infinity,
+                child: ElevatedButton(
+                  style: ElevatedButton.styleFrom(backgroundColor: Colors.redAccent),
+                  onPressed: () async {
+                    String street = streetController.text.trim();
+                    String city = cityController.text.trim();
+                    String state = stateController.text.trim();
+                    String postal = postalCodeController.text.trim();
+                    
+                    if (street.isEmpty || city.isEmpty || state.isEmpty || postal.isEmpty) {
+                      _showFloatingWarning("Please fill up all address elements.");
+                      return; 
+                    }
+
+                    // Format address text matching standard string synchronization matching your array pattern
+                    String newAddr = "$street, $postal $city, $state";
+
+                    List updatedList = List.from(allAddresses ?? []);
+                    if (index != null) { updatedList[index] = newAddr; } else { updatedList.add(newAddr); }
+                    await FirebaseFirestore.instance.collection('users').doc(user?.uid).update({'addresses': updatedList});
+                    if (mounted) Navigator.pop(context);
+                  },
+                  child: const Text("Save Address", style: TextStyle(color: Colors.white)),
+                ),
+              ),
+              const SizedBox(height: 20),
+            ],
+          ),
         ),
       ),
     );
