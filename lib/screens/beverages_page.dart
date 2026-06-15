@@ -2,11 +2,93 @@ import 'package:flutter/material.dart';
 import 'package:cloud_firestore/cloud_firestore.dart'; 
 import 'dart:convert'; // 🔑 Native Flutter decoder (super lightweight, no installation needed!)
 import 'product_detail_page.dart';
+import 'categories_page.dart'; // 🔑 Import this to reuse your existing FilterBottomSheet cleanly
 
-class BeveragesPage extends StatelessWidget {
+class BeveragesPage extends StatefulWidget {
   final String outletId;
 
   const BeveragesPage({Key? key, required this.outletId}) : super(key: key);
+
+  @override
+  State<BeveragesPage> createState() => _BeveragesPageState();
+}
+
+class _BeveragesPageState extends State<BeveragesPage> {
+  // 🔑 Filter State Tracking Variables
+  String? selectedPrice;
+  String? selectedSort;
+  String? selectedColor;
+
+  double _forceDouble(dynamic value) {
+    if (value == null) return 0.0;
+    if (value is double) return value;
+    if (value is int) return value.toDouble();
+    if (value is String) return double.tryParse(value) ?? 0.0;
+    return 0.0;
+  }
+
+  int _forceInt(dynamic value) {
+    if (value == null) return 0;
+    if (value is int) return value;
+    if (value is double) return value.toInt();
+    if (value is String) return (double.tryParse(value) ?? 0.0).toInt();
+    return 0;
+  }
+
+  // 🔑 Reuses your clean bottom sheet UI logic but applies parameters locally to this page
+  void _openFilter(BuildContext context) {
+    showModalBottomSheet(
+      context: context,
+      isScrollControlled: true,
+      shape: const RoundedRectangleBorder(borderRadius: BorderRadius.vertical(top: Radius.circular(25))),
+      builder: (context) => Container(
+        padding: const EdgeInsets.all(20.0),
+        child: Column(mainAxisSize: MainAxisSize.min, crossAxisAlignment: CrossAxisAlignment.start, children: [
+          Row(mainAxisAlignment: MainAxisAlignment.spaceBetween, children: [
+            const Text("Filter Products", style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold)),
+            IconButton(onPressed: () => Navigator.pop(context), icon: const Icon(Icons.close))
+          ]),
+          _buildFilterSection("Price Range", ["RM 0 - RM 10", "RM 10 - RM 50", "RM 50 - RM 100", "Above RM 100"], selectedPrice, (val) => setState(() => selectedPrice = val)),
+          _buildFilterSection("Sort By", ["Popular", "Least Popular"], selectedSort, (val) => setState(() => selectedSort = val)),
+          _buildFilterSection("By Colour", ["Blue", "Pink", "Green", "White", "Black"], selectedColor, (val) => setState(() => selectedColor = val)),
+          const SizedBox(height: 20),
+          Row(
+            children: [
+              Expanded(
+                child: OutlinedButton(
+                  style: OutlinedButton.styleFrom(shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(15)), side: const BorderSide(color: Colors.grey)),
+                  onPressed: () {
+                    setState(() {
+                      selectedPrice = null;
+                      selectedSort = null;
+                      selectedColor = null;
+                    });
+                    Navigator.pop(context);
+                  },
+                  child: const Text("CLEAR", style: TextStyle(color: Colors.black54, fontWeight: FontWeight.bold)),
+                ),
+              ),
+              const SizedBox(width: 12),
+              Expanded(
+                child: ElevatedButton(
+                  style: ElevatedButton.styleFrom(backgroundColor: Colors.redAccent, shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(15))),
+                  onPressed: () => Navigator.pop(context),
+                  child: const Text("APPLY", style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold)),
+                ),
+              ),
+            ],
+          ),
+        ]),
+      ),
+    );
+  }
+
+  Widget _buildFilterSection(String title, List<String> options, String? selected, Function(String) onSelect) {
+    return Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+      Padding(padding: const EdgeInsets.symmetric(vertical: 8.0), child: Text(title, style: const TextStyle(fontWeight: FontWeight.bold, color: Colors.black54))),
+      SingleChildScrollView(scrollDirection: Axis.horizontal, child: Row(children: options.map((opt) => Padding(padding: const EdgeInsets.only(right: 8.0), child: ChoiceChip(label: Text(opt), selected: selected == opt, onSelected: (bool s) => onSelect(opt), selectedColor: Colors.redAccent.withOpacity(0.2), checkmarkColor: Colors.redAccent))).toList())),
+    ]);
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -22,6 +104,13 @@ class BeveragesPage extends StatelessWidget {
         shape: const RoundedRectangleBorder(
           borderRadius: BorderRadius.vertical(bottom: Radius.circular(20)),
         ),
+        actions: [
+          // 🔑 Filter Button Action Added onto your Category Screen Navigation Frame
+          IconButton(
+            icon: const Icon(Icons.filter_list, color: Colors.white), 
+            onPressed: () => _openFilter(context)
+          ),
+        ],
       ),
       body: SingleChildScrollView(
         child: Column(
@@ -81,7 +170,7 @@ class BeveragesPage extends StatelessWidget {
               stream: FirebaseFirestore.instance
                   .collection('products')
                   .where('category', isEqualTo: 'Beverages') 
-                  .where('outletId', arrayContains: outletId)
+                  .where('outletId', arrayContains: widget.outletId)
                   .snapshots(),
               builder: (context, snapshot) {
                 if (snapshot.hasError) return const Center(child: Text("Error loading data"));
@@ -92,7 +181,45 @@ class BeveragesPage extends StatelessWidget {
                   ));
                 }
 
-                final docs = snapshot.data!.docs;
+                // 🔑 Engine matching parsing parameters dynamically out of Firestore matching criteria logic inside search delegate
+                final docs = snapshot.data!.docs.where((doc) {
+                  final data = doc.data() as Map<String, dynamic>;
+                  final color = data['color']?.toString().toLowerCase() ?? "";
+                  double currentPrice = _forceDouble(data['price']);
+
+                  bool matchesPrice = true;
+                  if (selectedPrice != null) {
+                    if (selectedPrice == "RM 0 - RM 10") matchesPrice = currentPrice <= 10;
+                    else if (selectedPrice == "RM 10 - RM 50") matchesPrice = currentPrice > 10 && currentPrice <= 50;
+                    else if (selectedPrice == "RM 50 - RM 100") matchesPrice = currentPrice > 50 && currentPrice <= 100;
+                    else if (selectedPrice == "Above RM 100") matchesPrice = currentPrice > 100;
+                  }
+                  
+                  bool matchesColor = selectedColor == null || color == selectedColor!.toLowerCase();
+
+                  return matchesPrice && matchesColor;
+                }).toList();
+
+                // 🔑 Re-order array items accurately based on sales metrics sorting selection values
+                docs.sort((a, b) {
+                  final dataA = a.data() as Map<String, dynamic>;
+                  final dataB = b.data() as Map<String, dynamic>;
+
+                  int metricA = _forceInt(dataA['salesCount'] ?? dataA['revenue']);
+                  int metricB = _forceInt(dataB['salesCount'] ?? dataB['revenue']);
+
+                  if (selectedSort == "Least Popular") {
+                    int comp = metricA.compareTo(metricB);
+                    if (comp != 0) return comp;
+                  } else if (selectedSort == "Popular") {
+                    int comp = metricB.compareTo(metricA);
+                    if (comp != 0) return comp;
+                  }
+
+                  double priceA = _forceDouble(dataA['price']);
+                  double priceB = _forceDouble(dataB['price']);
+                  return priceA.compareTo(priceB);
+                });
 
                 if (docs.isEmpty) {
                   return Center(
@@ -102,7 +229,7 @@ class BeveragesPage extends StatelessWidget {
                         children: [
                           Icon(Icons.no_drinks_outlined, size: 80, color: Colors.grey.shade300),
                           const SizedBox(height: 16),
-                          const Text("No drinks available at this outlet.", style: TextStyle(color: Colors.grey)),
+                          const Text("No drinks match your filter choices.", style: TextStyle(color: Colors.grey)),
                         ],
                       ),
                     ),
@@ -126,14 +253,11 @@ class BeveragesPage extends StatelessWidget {
                     final String imagePath = item["imageUrl"]?.toString() ?? "";
                     final double price = (item["price"] is num) ? item["price"].toDouble() : double.tryParse(item["price"].toString()) ?? 0.0;
                     
-                    // 🎯 FIX: Parse stock safely (Handles String or Number)
                     var rawStock = item["stock"] ?? 0;
                     int parsedStock = (rawStock is String) 
                         ? (int.tryParse(rawStock) ?? 0) 
                         : (rawStock as num).toInt();
 
-                    // 🕒 Smart "NEW" calculation tag:
-                    // Only evaluates to true if item contains a valid timestamp within 48 hours.
                     bool isNewProduct = false; 
                     if (item.containsKey('timestamp') && item['timestamp'] != null) {
                       try {
@@ -151,12 +275,12 @@ class BeveragesPage extends StatelessWidget {
                           context,
                           MaterialPageRoute(
                             builder: (context) => ProductDetailPage(
-                              id: doc.id, // 🎯 FIX: Added ID for StreamBuilder sync
+                              id: doc.id, 
                               name: item["name"] ?? "Unknown",
                               price: price.toString(),
                               image: imagePath.isEmpty ? "assets/images/air 1.png" : imagePath,
-                              outletId: outletId,
-                              stock: parsedStock, // 🎯 FIX: Passing actual stock
+                              outletId: widget.outletId,
+                              stock: parsedStock, 
                             ),
                           ),
                         );
@@ -172,7 +296,6 @@ class BeveragesPage extends StatelessWidget {
                         child: Column(
                           crossAxisAlignment: CrossAxisAlignment.start,
                           children: [
-                            // Image Section
                             Expanded(
                               child: Stack(
                                 children: [
@@ -186,7 +309,6 @@ class BeveragesPage extends StatelessWidget {
                                     ),
                                     child: _buildProductImage(imagePath),
                                   ),
-                                  // ✨ The Small "NEW" Product Badge Overlay
                                   if (isNewProduct)
                                     Positioned(
                                       top: 10,
@@ -208,7 +330,6 @@ class BeveragesPage extends StatelessWidget {
                               ),
                             ),
                             
-                            // Text Section
                             Padding(
                               padding: const EdgeInsets.all(12.0),
                               child: Column(
@@ -273,7 +394,6 @@ class BeveragesPage extends StatelessWidget {
               return Image.asset(path, fit: BoxFit.contain, errorBuilder: (c, e, s) => const Icon(Icons.image_not_supported));
             }
             
-            // Decodes base64 data string natively and dynamically without using heavy external packages
             String cleanBase64 = path.contains(',') ? path.split(',').last : path;
             return Image.memory(
               base64Decode(cleanBase64.trim()),
