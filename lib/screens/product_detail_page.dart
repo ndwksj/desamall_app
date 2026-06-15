@@ -218,15 +218,15 @@ class _ProductDetailPageState extends State<ProductDetailPage> {
                               crossAxisAlignment: CrossAxisAlignment.start,
                               children: [
                                 Text(
-  // 🔑 If the total item price is more than RM 100, show calculated points; otherwise show 0.00
-  "Earn RM ${((parsedPrice * _quantity) >= 100.0 ? (parsedPrice * _quantity * 0.005) : 0.0).toStringAsFixed(2)} points!", 
-  style: TextStyle(color: Colors.green[800], fontWeight: FontWeight.bold, fontSize: 16),
-),
-const SizedBox(height: 4),
-Text(
-  "You will get reward points from this purchase to use for your next order if you spend more than RM100.",
-  style: TextStyle(color: Colors.green[700], fontSize: 12),
-),
+                                  // 🔑 Calculated at 0.0005 multiplier if total > 100
+                                  "Earn ${( (parsedPrice * _quantity) >= 100.0 ? (parsedPrice * _quantity * 0.0005) : 0.0 ).toStringAsFixed(2)} points!", 
+                                  style: TextStyle(color: Colors.green[800], fontWeight: FontWeight.bold, fontSize: 16),
+                                ),
+                                const SizedBox(height: 4),
+                                Text(
+                                  "You will get reward points from this purchase to use for your next order if you spend more than RM100.",
+                                  style: TextStyle(color: Colors.green[700], fontSize: 12),
+                                ),
                               ],
                             ),
                           ),
