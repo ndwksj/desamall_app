@@ -36,6 +36,15 @@ class _HomeAdminState extends State<HomeAdmin> {
     _loadAdminRoleData();
   }
 
+  @override
+  void dispose() {
+    _badgeStream = null;
+    _profileCardStream = null;
+    _outletsHorizontalStream = null;
+    _productsHorizontalStream = null;
+    super.dispose();
+  }
+
   Future<void> _loadAdminRoleData() async {
     if (currentUser != null) {
       try {
@@ -162,6 +171,8 @@ class _HomeAdminState extends State<HomeAdmin> {
       return Image.memory(
         base64Decode(path.contains(',') ? path.split(',').last : path),
         width: width, height: height, fit: BoxFit.cover,
+        cacheWidth: 300,
+        cacheHeight: 300,
         errorBuilder: (context, error, stackTrace) => const Icon(Icons.broken_image, color: Color(0xFFD2D7DB)),
       );
     } catch (e) {
@@ -689,6 +700,27 @@ class OutletsManagementPage extends StatelessWidget {
 
   OutletsManagementPage({this.branchAccess = 'all', this.matchedDocIds = const []});
 
+  Widget _buildRowImage(String? path) {
+    if (path == null || path.isEmpty) {
+      return Container(
+        color: const Color(0xFFF9F9F9),
+        width: 60, height: 60,
+        child: const Icon(Icons.storefront, color: Color(0xFFD2D7DB), size: 24),
+      );
+    }
+    try {
+      return Image.memory(
+        base64Decode(path.contains(',') ? path.split(',').last : path),
+        width: 60, height: 60, fit: BoxFit.cover,
+        cacheWidth: 150,
+        cacheHeight: 150,
+        errorBuilder: (context, error, stackTrace) => const Icon(Icons.broken_image, color: Color(0xFFD2D7DB)),
+      );
+    } catch (_) {
+      return const Icon(Icons.broken_image, color: Color(0xFFD2D7DB));
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
     Query outletQuery = FirebaseFirestore.instance.collection('outlets');
@@ -713,6 +745,11 @@ class OutletsManagementPage extends StatelessWidget {
         builder: (context, snapshot) {
           if (!snapshot.hasData) return const Center(child: CircularProgressIndicator(color: Color(0xFFD32F2F)));
           final docs = snapshot.data!.docs;
+          
+          if (docs.isEmpty) {
+            return const Center(child: Text("No outlets found."));
+          }
+
           return ListView.builder(
             padding: const EdgeInsets.all(16),
             itemCount: docs.length,
@@ -722,14 +759,18 @@ class OutletsManagementPage extends StatelessWidget {
                 margin: const EdgeInsets.only(bottom: 12),
                 decoration: BoxDecoration(
                   color: Colors.white,
-                  borderRadius: BorderRadius.circular(14),
-                  border: Border.all(color: const Color(0xFFE8ECEF), width: 1.2),
+                  borderRadius: BorderRadius.circular(12),
+                  border: Border.all(color: const Color(0xFFE8ECEF)),
                 ),
                 child: ListTile(
-                  contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 6),
-                  title: Text(data['name'] ?? 'Unnamed Outlet', style: const TextStyle(fontWeight: FontWeight.w700, color: Color(0xFF1F2A38))),
-                  subtitle: Text(data['address'] ?? '', maxLines: 1, overflow: TextOverflow.ellipsis),
-                  trailing: const Icon(Icons.arrow_forward_ios_rounded, size: 14),
+                  contentPadding: const EdgeInsets.all(8),
+                  leading: ClipRRect(
+                    borderRadius: BorderRadius.circular(8),
+                    child: _buildRowImage(data['image']),
+                  ),
+                  title: Text(data['name'] ?? "No Name", style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 14)),
+                  subtitle: Text(data['address'] ?? "No Address listed", maxLines: 1, overflow: TextOverflow.ellipsis, style: const TextStyle(fontSize: 12)),
+                  trailing: const Icon(Icons.arrow_forward_ios_rounded, size: 14, color: Colors.grey),
                   onTap: () {
                     Navigator.push(context, MaterialPageRoute(
                       builder: (_) => OutletDetailsAdmin(outlet: data, docId: docs[index].id)

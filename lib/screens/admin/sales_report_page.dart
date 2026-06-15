@@ -20,7 +20,7 @@ class _SalesReportPageState extends State<SalesReportPage> {
   int selectedYear = DateTime.now().year;
 
   Future<void> migrateOldReviews() async {
-    var collection = FirebaseFirestore.instance.collection('reviews').limit(50); // 🛡️ Limit migration safety
+    var collection = FirebaseFirestore.instance.collection('reviews').limit(50); 
     var snapshot = await collection.get();
     for (var doc in snapshot.docs) {
       var data = doc.data() as Map<String, dynamic>;
@@ -68,7 +68,6 @@ class _SalesReportPageState extends State<SalesReportPage> {
           }
         });
       } else {
-        // 🛡️ Safe tracking pull threshold
         var querySnapshot = await FirebaseFirestore.instance.collection('outlets').limit(30).get();
         for (var outletDoc in querySnapshot.docs) {
           String docName = (outletDoc.data()['name'] ?? '').toString().toLowerCase();
@@ -150,7 +149,7 @@ class _SalesReportPageState extends State<SalesReportPage> {
     return Container(
       padding: const EdgeInsets.fromLTRB(16, 16, 16, 8),
       child: StreamBuilder<QuerySnapshot>(
-        stream: FirebaseFirestore.instance.collection('outlets').limit(30).snapshots(), // 🛡️ Stability limit
+        stream: FirebaseFirestore.instance.collection('outlets').limit(30).snapshots(), 
         builder: (context, snapshot) {
           if (!snapshot.hasData) return const LinearProgressIndicator();
           var outlets = snapshot.data!.docs;
@@ -225,7 +224,6 @@ class _SalesReportPageState extends State<SalesReportPage> {
   }
 
   Widget _buildSalesReport() {
-    // 🛡️ Listens to orders collection to sync mobile shopping transactions securely
     return StreamBuilder<QuerySnapshot>(
       stream: FirebaseFirestore.instance.collection('orders').snapshots(),
       builder: (context, snapshot) {
@@ -238,49 +236,12 @@ class _SalesReportPageState extends State<SalesReportPage> {
         Map<String, int> productSalesCount = {};
 
         Map<int, double> yearlyRevenueMap = {
-          2019: 14250.00,
-          2020: 19800.50,
-          2021: 24500.00,
-          2022: 31200.25,
-          2023: 42150.80,
-          2024: 53900.00,
-          2025: 61420.10,
-          2026: 0.0,
+          2019: 14250.00, 2020: 19800.50, 2021: 24500.00, 2022: 31200.25,
+          2023: 42150.80, 2024: 53900.00, 2025: 61420.10, 2026: 0.0,
         };
 
-        Map<int, double> mockMonths2026 = {
-          1: 1850.00, 
-          2: 2100.40, 
-          3: 1650.90, 
-        };
-
-        yearlyRevenueMap[2026] = mockMonths2026[1]! + mockMonths2026[2]! + mockMonths2026[3]!;
-        
-        bool isHistoricalMockTimeframe = (selectedYear < 2026) || (selectedYear == 2026 && selectedMonth <= 3);
-
-        if (selectedYear == 2026 && isHistoricalMockTimeframe && mockMonths2026.containsKey(selectedMonth)) {
-          totalRevenue = mockMonths2026[selectedMonth]!;
-        } else if (selectedYear < 2026) {
-          totalRevenue = yearlyRevenueMap[selectedYear]! / 12;
-        }
-
-        if (isHistoricalMockTimeframe) {
-          productSalesCount = {
-            "DELISH Tomyam Putih (6x10g)": 45,
-            "AYNUF Pes Sambal Tumis (100g)": 38,
-            "Kerepek Ubi Pedas Basah": 27,
-            "Madu Kelulut Asli": 19,
-          };
-        }
-
-        // Loop through orders data
         for (var doc in allDocs) {
           var data = doc.data() as Map<String, dynamic>;
-
-          String docStatus = (data['status'] ?? '').toString().toLowerCase();
-          if (docStatus == 'rejected' || docStatus == 'pending') {
-            continue; 
-          }
 
           String docOutletId = (data['outletId'] ?? '').toString();
           String docOutletName = (data['outlet'] ?? data['outletName'] ?? data['assignedOutlet'] ?? '').toString();
@@ -288,63 +249,80 @@ class _SalesReportPageState extends State<SalesReportPage> {
           if (selectedOutletId != null) {
             bool matchesId = docOutletId == selectedOutletId;
             bool matchesName = docOutletName.toLowerCase().contains(selectedOutletName?.toLowerCase() ?? '___unknown___');
-            
             if (!matchesId && !matchesName && docOutletId.isNotEmpty && docOutletId != "Verifying Outlet...") {
               continue; 
             }
           }
 
-          // 🔑 DYNAMIC DATE PARSING METRIC ENGINE
           DateTime? date;
           if (data['timestamp'] != null && data['timestamp'] is Timestamp) {
             date = (data['timestamp'] as Timestamp).toDate();
           } else if (data['submissionDate'] != null) {
             try {
-              // Extract numeric fragments from custom string logs (e.g., "7/6/2026 at 21:44")
               String rawDateStr = data['submissionDate'].toString().split(' at ').first.trim();
               List<String> parts = rawDateStr.split('/');
               if (parts.length == 3) {
-                int day = int.parse(parts[0]);
-                int month = int.parse(parts[1]);
-                int year = int.parse(parts[2]);
-                date = DateTime(year, month, day);
+                date = DateTime(int.parse(parts[2]), int.parse(parts[1]), int.parse(parts[0]));
               }
-            } catch (_) {
-              date = null;
-            }
+            } catch (_) {}
           }
 
-          if (date != null) {
-            double orderTotal = 0.0;
-            var rawTotal = data['totalPrice'] ?? data['total_price'] ?? data['totalPaidAmount'] ?? data['subtotal'] ?? 0.0;
-            if (rawTotal is num) {
-              orderTotal = rawTotal.toDouble();
-            } else if (rawTotal is String) {
-              orderTotal = double.tryParse(rawTotal.replaceAll(RegExp(r'[^\d.]'), '')) ?? 0.0;
-            }
+          double orderTotal = 0.0;
+          var rawTotal = data['totalPrice'] ?? data['total_price'] ?? data['totalPaidAmount'] ?? data['subtotal'] ?? 0.0;
+          if (rawTotal is num) {
+            orderTotal = rawTotal.toDouble();
+          } else if (rawTotal is String) {
+            orderTotal = double.tryParse(rawTotal.replaceAll(RegExp(r'[^\d.]'), '')) ?? 0.0;
+          }
 
-            if (date.year == 2026) {
-              yearlyRevenueMap[2026] = yearlyRevenueMap[2026]! + orderTotal;
-            } else if (yearlyRevenueMap.containsKey(date.year)) {
-              yearlyRevenueMap[date.year] = yearlyRevenueMap[date.year]! + orderTotal;
-            }
+          if (date != null && yearlyRevenueMap.containsKey(date.year)) {
+            yearlyRevenueMap[date.year] = yearlyRevenueMap[date.year]! + orderTotal;
+          } else if (date != null && date.year == 2026) {
+            yearlyRevenueMap[2026] = (yearlyRevenueMap[2026] ?? 0.0) + orderTotal;
+          }
 
-            if (!isHistoricalMockTimeframe && date.month == selectedMonth && date.year == selectedYear) {
-              totalRevenue += orderTotal;
+          if (date != null && date.month == selectedMonth && date.year == selectedYear) {
+            totalRevenue += orderTotal;
 
-              if (data['items'] != null && data['items'] is List) {
-                List items = data['items'];
-                for (var item in items) {
-                  String name = item['name'] ?? item['productName'] ?? "Unknown Item";
-                  int qty = (item['quantity'] ?? item['qty'] ?? 1).toInt();
+            if (data['items'] != null && data['items'] is List) {
+              List items = data['items'];
+              for (var item in items) {
+                if (item is! Map) continue;
+                String name = (item['name'] ?? item['productName'] ?? "Unknown Item").toString().trim();
+                if (name.isEmpty) continue;
+
+                var rawItemQty = item['quantity'] ?? item['qty'] ?? 1;
+                int qty = 1;
+                if (rawItemQty is num) {
+                  qty = rawItemQty.toInt();
+                } else if (rawItemQty is String) {
+                  qty = int.tryParse(rawItemQty) ?? 1;
+                }
+                productSalesCount[name] = (productSalesCount[name] ?? 0) + qty;
+              }
+            } else if (data['items'] != null && data['items'] is Map) {
+              // Safe block to scan if items is a nested Map
+              Map itemsMap = data['items'];
+              itemsMap.forEach((key, item) {
+                if (item is Map) {
+                  String name = (item['name'] ?? item['productName'] ?? "Unknown Item").toString().trim();
+                  var rawQty = item['quantity'] ?? item['qty'] ?? 1;
+                  int qty = (rawQty is num) ? rawQty.toInt() : (int.tryParse(rawQty.toString()) ?? 1);
                   productSalesCount[name] = (productSalesCount[name] ?? 0) + qty;
                 }
-              } else {
-                String? name = data['productName'] ?? data['product_name'] ?? data['itemsOrdered'];
-                if (name != null) {
-                  int qty = (data['quantity'] ?? data['qty'] ?? 1).toInt();
-                  productSalesCount[name] = (productSalesCount[name] ?? 0) + qty;
+              });
+            } else {
+              String? name = data['productName'] ?? data['product_name'] ?? data['itemsOrdered'];
+              if (name != null && name.toString().trim().isNotEmpty) {
+                String trimmedName = name.toString().trim();
+                var rawFallbackQty = data['quantity'] ?? data['qty'] ?? 1;
+                int qty = 1;
+                if (rawFallbackQty is num) {
+                  qty = rawFallbackQty.toInt();
+                } else if (rawFallbackQty is String) {
+                  qty = int.tryParse(rawFallbackQty) ?? 1;
                 }
+                productSalesCount[trimmedName] = (productSalesCount[trimmedName] ?? 0) + qty;
               }
             }
           }
@@ -358,18 +336,14 @@ class _SalesReportPageState extends State<SalesReportPage> {
           children: [
             _buildRevenueHeader(totalRevenue, months[selectedMonth - 1], selectedYear),
             const SizedBox(height: 24),
-
             _buildRatingsAndFeedbackSection(),
             const SizedBox(height: 24),
-
             const Text("Top Products", style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold)),
             const SizedBox(height: 12),
             if (topProducts.isEmpty)
               _buildEmptyState("No sales found for ${months[selectedMonth - 1]} $selectedYear")
             else
-              // 🔑 FIXED UPDATED LINE: Replaced .take(5) with .take(10) to display the requested top 10 items list!
-              ...topProducts.take(10).map((name) => _buildSalesTile(name, productSalesCount[name]!, isHistoricalMockTimeframe)).toList(),
-
+              ...topProducts.take(10).map((name) => _buildSalesTile(name, productSalesCount[name]!)).toList(),
             const SizedBox(height: 24),
             const Divider(),
             const SizedBox(height: 12),
@@ -410,29 +384,19 @@ class _SalesReportPageState extends State<SalesReportPage> {
           mainAxisAlignment: MainAxisAlignment.spaceBetween,
           children: [
             const Expanded(
-              child: Text(
-                "Customer Satisfaction & Feedback",
-                style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
-                maxLines: 1,
-                overflow: TextOverflow.ellipsis,
-              ),
+              child: Text("Customer Satisfaction & Feedback", style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold), maxLines: 1, overflow: TextOverflow.ellipsis),
             ),
             const SizedBox(width: 8),
             if (selectedOutletId != null || widget.branchAccess == 'all')
               InkWell(
                 onTap: () {
-                  Navigator.push(
-                    context,
-                    MaterialPageRoute(
-                      builder: (_) => StoreReviewsPage(
+                  Navigator.push(context, MaterialPageRoute(builder: (_) => StoreReviewsPage(
                         outletId: selectedOutletName ?? 'All Outlets',
                         outletName: selectedOutletName ?? 'All Outlets',
                         monthName: months[selectedMonth - 1],
                         monthInt: selectedMonth,
                         year: selectedYear,
-                      ),
-                    ),
-                  );
+                      )));
                 },
                 child: const Row(
                   children: [
@@ -446,40 +410,19 @@ class _SalesReportPageState extends State<SalesReportPage> {
         const SizedBox(height: 12),
         StreamBuilder<QuerySnapshot>(
           stream: () {
-            var query = FirebaseFirestore.instance.collection('reviews')
-                .where('month', isEqualTo: selectedMonth)
-                .where('year', isEqualTo: selectedYear)
-                .limit(40);
-
+            var query = FirebaseFirestore.instance.collection('reviews').where('month', isEqualTo: selectedMonth).where('year', isEqualTo: selectedYear).limit(40);
             if (selectedOutletId != null && selectedOutletId != 'all') {
               query = query.where('outletId', isEqualTo: selectedOutletName);
             }
-            
             return query.snapshots();
           }(),
           builder: (context, snapshot) {
-            if (snapshot.connectionState == ConnectionState.waiting) {
-              return const Center(child: CircularProgressIndicator(color: Colors.redAccent));
-            }
-
-            if (snapshot.hasError) {
-              debugPrint("Firebase Error: ${snapshot.error}");
-              return const Center(child: Text("Error loading data."));
-            }
-
             if (!snapshot.hasData || snapshot.data!.docs.isEmpty) {
               return Container(
                 width: double.infinity,
                 padding: const EdgeInsets.all(20),
-                decoration: BoxDecoration(
-                    color: Colors.grey[50], 
-                    borderRadius: BorderRadius.circular(20), 
-                    border: Border.all(color: Colors.grey.shade200)
-                ),
-                child: const Center(
-                    child: Text("No feedback records found for this period.", 
-                    style: TextStyle(color: Colors.grey, fontSize: 13))
-                ),
+                decoration: BoxDecoration(color: Colors.grey[50], borderRadius: BorderRadius.circular(20), border: Border.all(color: Colors.grey.shade200)),
+                child: const Center(child: Text("No feedback records found for this period.", style: TextStyle(color: Colors.grey, fontSize: 13))),
               );
             }
 
@@ -490,7 +433,7 @@ class _SalesReportPageState extends State<SalesReportPage> {
               var r = data['rating'];
               totalStars += (r is num) ? r.toDouble() : 0.0;
             }
-            double averageRating = reviews.isNotEmpty ? (totalStars / reviews.length) : 0.0;
+            double averageRating = totalStars / reviews.length;
 
             return InkWell(
               onTap: () {
@@ -557,12 +500,7 @@ class _SalesReportPageState extends State<SalesReportPage> {
     return GridView.builder(
       shrinkWrap: true,
       physics: const NeverScrollableScrollPhysics(),
-      gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
-        crossAxisCount: 2,
-        crossAxisSpacing: 12,
-        mainAxisSpacing: 12,
-        childAspectRatio: 1.5,
-      ),
+      gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(crossAxisCount: 2, crossAxisSpacing: 12, mainAxisSpacing: 12, childAspectRatio: 1.5),
       itemCount: availableYears.length,
       itemBuilder: (context, idx) {
         int currentYearElement = availableYears[idx];
@@ -574,36 +512,17 @@ class _SalesReportPageState extends State<SalesReportPage> {
           decoration: BoxDecoration(
               color: isCurrentlyPicked ? Colors.redAccent.withOpacity(0.04) : Colors.white,
               borderRadius: BorderRadius.circular(16),
-              border: Border.all(
-                color: isCurrentlyPicked ? Colors.redAccent : Colors.grey.shade200,
-                width: isCurrentlyPicked ? 1.5 : 1,
-              ),
-              boxShadow: [
-                BoxShadow(color: Colors.black.withOpacity(0.02), blurRadius: 6, offset: const Offset(0, 3))
-              ]),
+              border: Border.all(color: isCurrentlyPicked ? Colors.redAccent : Colors.grey.shade200, width: isCurrentlyPicked ? 1.5 : 1),
+              boxShadow: [BoxShadow(color: Colors.black.withOpacity(0.02), blurRadius: 6, offset: const Offset(0, 3))]),
           child: Column(
             mainAxisAlignment: MainAxisAlignment.center,
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              Text(
-                "Year $currentYearElement",
-                style: TextStyle(
-                  fontSize: 13,
-                  fontWeight: FontWeight.bold,
-                  color: isCurrentlyPicked ? Colors.redAccent : Colors.grey.shade500,
-                ),
-              ),
+              Text("Year $currentYearElement", style: TextStyle(fontSize: 13, fontWeight: FontWeight.bold, color: isCurrentlyPicked ? Colors.redAccent : Colors.grey.shade500)),
               const SizedBox(height: 6),
               FittedBox(
                 fit: BoxFit.scaleDown,
-                child: Text(
-                  "RM ${totalYearRevenue.toStringAsFixed(2)}",
-                  style: const TextStyle(
-                    fontSize: 16,
-                    fontWeight: FontWeight.w900,
-                    color: Colors.black87,
-                  ),
-                ),
+                child: Text("RM ${totalYearRevenue.toStringAsFixed(2)}", style: const TextStyle(fontSize: 16, fontWeight: FontWeight.w900, color: Colors.black87)),
               ),
             ],
           ),
@@ -612,7 +531,7 @@ class _SalesReportPageState extends State<SalesReportPage> {
     );
   }
 
-  Widget _buildSalesTile(String name, int qty, bool isMockTimeframe) {
+  Widget _buildSalesTile(String name, int qty) {
     return Container(
       margin: const EdgeInsets.only(bottom: 12),
       decoration: BoxDecoration(
@@ -622,13 +541,6 @@ class _SalesReportPageState extends State<SalesReportPage> {
       ),
       child: ListTile(
         onTap: () {
-          if (isMockTimeframe) {
-            ScaffoldMessenger.of(context).showSnackBar(
-              const SnackBar(content: Text("Detail log view is only available for live data.")),
-            );
-            return;
-          }
-
           Navigator.push(
             context,
             MaterialPageRoute(
@@ -649,11 +561,7 @@ class _SalesReportPageState extends State<SalesReportPage> {
         ),
         title: Text(name, style: const TextStyle(fontWeight: FontWeight.bold)),
         subtitle: Text("$qty units sold"),
-        trailing: Icon(
-          Icons.arrow_forward_ios_rounded,
-          size: 16,
-          color: isMockTimeframe ? Colors.grey.shade300 : Colors.redAccent,
-        ),
+        trailing: const Icon(Icons.arrow_forward_ios_rounded, size: 16, color: Colors.redAccent),
       ),
     );
   }
@@ -690,60 +598,66 @@ class ProductSalesDetailScreen extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    // 🔑 UPDATED LINE: Direct pipeline to the transactions order data array mapping tracker
-    Query refQuery = FirebaseFirestore.instance.collection('orders').limit(100); 
+    Query refQuery = FirebaseFirestore.instance.collection('orders').limit(150); 
 
     return Scaffold(
+      backgroundColor: const Color(0xFFF8F9FA), 
       appBar: AppBar(
-        title: Text(productName),
+        title: Text(productName, style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 18)),
         backgroundColor: Colors.redAccent,
         foregroundColor: Colors.white,
+        elevation: 0,
       ),
       body: StreamBuilder<QuerySnapshot>(
         stream: refQuery.snapshots(),
         builder: (context, snapshot) {
-          if (!snapshot.hasData) return const Center(child: CircularProgressIndicator());
+          if (!snapshot.hasData) return const Center(child: CircularProgressIndicator(color: Colors.redAccent));
 
           final docs = snapshot.data!.docs.where((doc) {
             var data = doc.data() as Map<String, dynamic>;
-            
-            DateTime? date;
-            if (data['timestamp'] != null && data['timestamp'] is Timestamp) {
-              date = (data['timestamp'] as Timestamp).toDate();
-            } else if (data['submissionDate'] != null) {
-              try {
-                String rawDateStr = data['submissionDate'].toString().split(' at ').first.trim();
-                List<String> parts = rawDateStr.split('/');
-                if (parts.length == 3) {
-                  date = DateTime(int.parse(parts[2]), int.parse(parts[1]), int.parse(parts[0]));
-                }
-              } catch (_) {}
-            }
-
-            if (date == null) return false;
-            bool dateMatch = date.month == monthInt && date.year == year;
             bool nameMatch = false;
+            String lookUpName = productName.toLowerCase().trim();
 
-            if (data['items'] != null) {
-              nameMatch = (data['items'] as List).any((item) => (item['name'] ?? item['productName']) == productName);
+            // 🎯 FIXED DATA BLOCKS HERE: Check field types securely so map types won't cause index crash exceptions
+            if (data['items'] != null && data['items'] is List) {
+              nameMatch = (data['items'] as List).any((item) {
+                if (item is! Map) return false;
+                String itemTarget = (item['name'] ?? item['productName'] ?? '').toString().toLowerCase().trim();
+                return itemTarget == lookUpName || itemTarget.contains(lookUpName) || lookUpName.contains(itemTarget);
+              });
+            } else if (data['items'] != null && data['items'] is Map) {
+              Map itemsMap = data['items'];
+              itemsMap.forEach((key, item) {
+                if (item is Map) {
+                  String itemTarget = (item['name'] ?? item['productName'] ?? '').toString().toLowerCase().trim();
+                  if (itemTarget == lookUpName || itemTarget.contains(lookUpName)) {
+                    nameMatch = true;
+                  }
+                }
+              });
             } else {
-              nameMatch = (data['productName'] ?? data['product_name']) == productName;
+              String baseTarget = (data['productName'] ?? data['product_name'] ?? '').toString().toLowerCase().trim();
+              nameMatch = baseTarget == lookUpName || baseTarget.contains(lookUpName) || lookUpName.contains(baseTarget);
             }
 
-            return dateMatch && nameMatch;
+            return nameMatch;
           }).toList();
 
           if (docs.isEmpty) {
             return Center(
-              child: Text(
-                "No transaction detail lines logged in database.",
-                style: TextStyle(color: Colors.grey.shade400),
+              child: Padding(
+                padding: const EdgeInsets.all(24.0),
+                child: Text(
+                  "No transaction detail lines logged in database.",
+                  textAlign: TextAlign.center,
+                  style: TextStyle(color: Colors.grey.shade400, fontSize: 14, fontWeight: FontWeight.w500),
+                ),
               ),
             );
           }
 
           return ListView.builder(
-            padding: const EdgeInsets.all(16),
+            padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 20),
             itemCount: docs.length,
             itemBuilder: (context, index) {
               var data = docs[index].data() as Map<String, dynamic>;
@@ -759,16 +673,89 @@ class ProductSalesDetailScreen extends StatelessWidget {
                 } catch (_) {}
               }
 
-              return Card(
-                margin: const EdgeInsets.only(bottom: 10),
-                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
-                child: ListTile(
-                  leading: const Icon(Icons.receipt_long, color: Colors.redAccent),
-                  title: Text("Order #${docs[index].id.substring(0, 8)}"),
-                  subtitle: Text("${date.day} $monthName $year"),
-                  trailing: Text(
-                    "RM ${(data['totalPrice'] ?? data['total_price'] ?? data['totalPaidAmount'] ?? 0.0).toStringAsFixed(2)}",
-                    style: const TextStyle(fontWeight: FontWeight.bold, color: Colors.black),
+              int explicitItemQty = 1;
+              String lookUpName = productName.toLowerCase().trim();
+              
+              if (data['items'] != null && data['items'] is List) {
+                for (var item in data['items']) {
+                  if (item is! Map) continue;
+                  String itemTarget = (item['name'] ?? item['productName'] ?? '').toString().toLowerCase().trim();
+                  if (itemTarget == lookUpName || itemTarget.contains(lookUpName)) {
+                    var rawQty = item['quantity'] ?? item['qty'] ?? 1;
+                    explicitItemQty = (rawQty is num) ? rawQty.toInt() : (int.tryParse(rawQty.toString()) ?? 1);
+                    break;
+                  }
+                }
+              } else if (data['items'] != null && data['items'] is Map) {
+                Map itemsMap = data['items'];
+                for (var item in itemsMap.values) {
+                  if (item is Map) {
+                    String itemTarget = (item['name'] ?? item['productName'] ?? '').toString().toLowerCase().trim();
+                    if (itemTarget == lookUpName || itemTarget.contains(lookUpName)) {
+                      var rawQty = item['quantity'] ?? item['qty'] ?? 1;
+                      explicitItemQty = (rawQty is num) ? rawQty.toInt() : (int.tryParse(rawQty.toString()) ?? 1);
+                      break;
+                    }
+                  }
+                }
+              } else {
+                var rawQty = data['quantity'] ?? data['qty'] ?? 1;
+                explicitItemQty = (rawQty is num) ? rawQty.toInt() : (int.tryParse(rawQty.toString()) ?? 1);
+              }
+
+              String rawStatus = (data['status'] ?? 'Completed').toString();
+
+              return Container(
+                margin: const EdgeInsets.only(bottom: 14),
+                decoration: BoxDecoration(
+                  color: Colors.white,
+                  borderRadius: BorderRadius.circular(16),
+                  boxShadow: [BoxShadow(color: Colors.black.withOpacity(0.02), blurRadius: 10, offset: const Offset(0, 4))],
+                  border: Border.all(color: Colors.grey.shade100),
+                ),
+                child: Padding(
+                  padding: const EdgeInsets.all(16),
+                  child: Row(
+                    crossAxisAlignment: CrossAxisAlignment.center,
+                    children: [
+                      Container(
+                        padding: const EdgeInsets.all(12),
+                        decoration: BoxDecoration(color: Colors.redAccent.withOpacity(0.08), borderRadius: BorderRadius.circular(12)),
+                        child: const Icon(Icons.receipt_long_rounded, color: Colors.redAccent, size: 26),
+                      ),
+                      const SizedBox(width: 16),
+                      Expanded(
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            Row(
+                              children: [
+                                Text(
+                                  "Order #${docs[index].id.substring(0, docs[index].id.length > 8 ? 8 : docs[index].id.length).toUpperCase()}",
+                                  style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 15, color: Colors.black87),
+                                ),
+                                const Spacer(),
+                                Container(
+                                  padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                                  decoration: BoxDecoration(color: Colors.green.withOpacity(0.1), borderRadius: BorderRadius.circular(8)),
+                                  child: Text(rawStatus, style: const TextStyle(color: Colors.green, fontSize: 11, fontWeight: FontWeight.bold)),
+                                ),
+                              ],
+                            ),
+                            const SizedBox(height: 6),
+                            Text(
+                              DateFormat('dd MMM yyyy, hh:mm a').format(date),
+                              style: const TextStyle(color: Colors.grey, fontSize: 12),
+                            ),
+                            const SizedBox(height: 4),
+                            Text(
+                              "Quantity: $explicitItemQty units",
+                              style: const TextStyle(fontWeight: FontWeight.bold, color: Colors.redAccent, fontSize: 13),
+                            ),
+                          ],
+                        ),
+                      ),
+                    ],
                   ),
                 ),
               );

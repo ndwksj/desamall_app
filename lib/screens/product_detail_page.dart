@@ -219,7 +219,7 @@ class _ProductDetailPageState extends State<ProductDetailPage> {
                               children: [
                                 Text(
                                   // 🔑 Calculated at 0.0005 multiplier if total > 100
-                                  "Earn ${( (parsedPrice * _quantity) >= 100.0 ? (parsedPrice * _quantity * 0.0005) : 0.0 ).toStringAsFixed(2)} points!", 
+                                  "Earn ${(parsedPrice * _quantity * 0.0005).toStringAsFixed(2)} points!", 
                                   style: TextStyle(color: Colors.green[800], fontWeight: FontWeight.bold, fontSize: 16),
                                 ),
                                 const SizedBox(height: 4),

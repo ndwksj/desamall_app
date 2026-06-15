@@ -249,16 +249,24 @@ class _ReceiptsHistoryCustomerState extends State<ReceiptsHistoryCustomer> {
             Map<String, dynamic> orderData = orderSnapshot.data ?? {};
             String assignedOutlet = "Verifying Outlet...";
 
-            if (orderData.isNotEmpty) {
-              String outletId = (orderData['outletId'] ?? data['outlet'] ?? data['outletId'] ?? "").toString();
+            // 🎯 FIXED OUTLET MAPPER MATRIX CONFIGURATION
+            if (orderData.isNotEmpty || data.isNotEmpty) {
+              // Combine parameters safely to find accurate structural IDs
+              String outletId = (orderData['outletId'] ?? data['outletId'] ?? data['outlet'] ?? "").toString();
 
               Map<String, String> outletMap = {
                 "outlets001": "DesaMall@Lipis",
                 "1qtcFaIzM9dUhqOVARH3": "DesaMall@Kepala Batas",
                 "outlets003": "DesaMall@Ipoh",
+                "lipis": "DesaMall@Lipis",
+                "kepala_batas": "DesaMall@Kepala Batas",
+                "ipoh": "DesaMall@Ipoh",
+                "DesaMall@Lipis": "DesaMall@Lipis",
+                "DesaMall@Kepala Batas": "DesaMall@Kepala Batas",
+                "DesaMall@Ipoh": "DesaMall@Ipoh",
               };
 
-              assignedOutlet = outletMap[outletId] ?? (orderData['outletName'] ?? data['outletId'] ?? "Main Store");
+              assignedOutlet = outletMap[outletId] ?? outletMap[outletId.toLowerCase()] ?? (orderData['outletName'] ?? data['outlet'] ?? "Main Store");
               
               // Optional: Debugging line to see what is being read
               print("DEBUG: Read ID '$outletId' -> Assigned '$assignedOutlet'");
@@ -269,8 +277,11 @@ class _ReceiptsHistoryCustomerState extends State<ReceiptsHistoryCustomer> {
                 "lipis": "DesaMall@Lipis",
                 "kepala_batas": "DesaMall@Kepala Batas",
                 "ipoh": "DesaMall@Ipoh",
+                "DesaMall@Lipis": "DesaMall@Lipis",
+                "DesaMall@Kepala Batas": "DesaMall@Kepala Batas",
+                "DesaMall@Ipoh": "DesaMall@Ipoh",
               };
-              assignedOutlet = outletMap[fallbackId.toLowerCase()] ?? (fallbackId.isNotEmpty ? fallbackId : "Main Store");
+              assignedOutlet = outletMap[fallbackId.toLowerCase()] ?? outletMap[fallbackId] ?? (fallbackId.isNotEmpty ? fallbackId : "Main Store");
             }
 
             // Timeline Boolean Evaluators
@@ -409,7 +420,8 @@ class _ReceiptsHistoryCustomerState extends State<ReceiptsHistoryCustomer> {
   }
 
   Widget _buildOrderItemsSection(Map<String, dynamic> orderData, Map<String, dynamic> receiptData) {
-    var rawItems = orderData['items'];
+    // 🔑 FIXED DETECTOR SEQUENCE: Prioritize parsing the directly uploaded items inside the receipt data object first
+    var rawItems = receiptData['items'] ?? orderData['items'];
     List<dynamic> itemsList = [];
     if (rawItems != null) {
       if (rawItems is List) itemsList = rawItems;
