@@ -1,1 +1,64 @@
-{"firestore":{"database":"(default)","location":"nam5","rules":"firestore.rules","indexes":"firestore.indexes.json"},"storage":{"rules":"storage.rules"},"flutter":{"platforms":{"android":{"default":{"projectId":"desamallapps","appId":"1:1007660997923:android:dc63c32ac9ac9d962bc096","fileOutput":"android/app/google-services.json"}},"ios":{"default":{"projectId":"desamallapps","appId":"1:1007660997923:ios:b788d0a549fa7f2e2bc096","uploadDebugSymbols":false,"fileOutput":"ios/Runner/GoogleService-Info.plist"}},"macos":{"default":{"projectId":"desamallapps","appId":"1:1007660997923:ios:b788d0a549fa7f2e2bc096","uploadDebugSymbols":false,"fileOutput":"macos/Runner/GoogleService-Info.plist"}},"dart":{"lib/firebase_options.dart":{"projectId":"desamallapps","configurations":{"android":"1:1007660997923:android:dc63c32ac9ac9d962bc096","ios":"1:1007660997923:ios:b788d0a549fa7f2e2bc096","macos":"1:1007660997923:ios:b788d0a549fa7f2e2bc096","web":"1:1007660997923:web:f18884551bd07fdb2bc096","windows":"1:1007660997923:web:caa8eea96854df0b2bc096"}}}}}}
+{
+  "firestore": {
+    "database": "(default)",
+    "location": "nam5",
+    "rules": "firestore.rules",
+    "indexes": "firestore.indexes.json"
+  },
+  "storage": {
+    "rules": "storage.rules"
+  },
+  "flutter": {
+    "platforms": {
+      "android": {
+        "default": {
+          "projectId": "desamallapps",
+          "appId": "1:1007660997923:android:dc63c32ac9ac9d962bc096",
+          "fileOutput": "android/app/google-services.json"
+        }
+      },
+      "ios": {
+        "default": {
+          "projectId": "desamallapps",
+          "appId": "1:1007660997923:ios:b788d0a549fa7f2e2bc096",
+          "uploadDebugSymbols": false,
+          "fileOutput": "ios/Runner/GoogleService-Info.plist"
+        }
+      },
+      "macos": {
+        "default": {
+          "projectId": "desamallapps",
+          "appId": "1:1007660997923:ios:b788d0a549fa7f2e2bc096",
+          "uploadDebugSymbols": false,
+          "fileOutput": "macos/Runner/GoogleService-Info.plist"
+        }
+      },
+      "dart": {
+        "lib/firebase_options.dart": {
+          "projectId": "desamallapps",
+          "configurations": {
+            "android": "1:1007660997923:android:dc63c32ac9ac9d962bc096",
+            "ios": "1:1007660997923:ios:b788d0a549fa7f2e2bc096",
+            "macos": "1:1007660997923:ios:b788d0a549fa7f2e2bc096",
+            "web": "1:1007660997923:web:f18884551bd07fdb2bc096",
+            "windows": "1:1007660997923:web:caa8eea96854df0b2bc096"
+          }
+        }
+      }
+    }
+  },
+  "hosting": {
+    "public": "build/web",
+    "ignore": [
+      "firebase.json",
+      "**/.*",
+      "**/node_modules/**"
+    ],
+    "rewrites": [
+      {
+        "source": "**",
+        "destination": "/index.html"
+      }
+    ]
+  }
+}
