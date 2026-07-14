@@ -11,7 +11,7 @@ import 'food_supplement_page.dart';
 import 'product_detail_page.dart';
 import 'cart_page.dart'; 
 import '../cart.dart';   
-import 'dart:convert'; // 🔑 Added to decode raw image strings from the admin side safely
+import 'dart:convert'; 
 
 class CategoriesPage extends StatelessWidget {
   final String outletId;
@@ -284,7 +284,7 @@ class ProductSearchDelegate extends SearchDelegate {
         }).toList();
 
         // 🔑 FIXED POPULARITY FILTER COUPLING:
-        // Prioritizes popular sorting directly when selected, making items rearrange accurately!
+        // Prioritizes popular sorting directly when selected, making items rearrange accurately
         results.sort((a, b) {
           final dataA = a.data() as Map<String, dynamic>;
           final dataB = b.data() as Map<String, dynamic>;
@@ -301,7 +301,7 @@ class ProductSearchDelegate extends SearchDelegate {
             if (comp != 0) return comp;
           }
 
-          // Fallback tie-breaker: sort by price
+          //  sort by price
           double priceA = _forceDouble(dataA['price']);
           double priceB = _forceDouble(dataB['price']);
           return priceA.compareTo(priceB);

@@ -19,7 +19,7 @@ class _RewardsHistoryPageState extends State<RewardsHistoryPage> {
     super.dispose();
   }
 
-  // 🎯 Clean, standard function to fetch and combine reward records
+  // Clean, standard function to fetch and combine reward records
   Future<List<Map<String, dynamic>>> _getCombinedRewards() async {
     if (user == null) return [];
 
@@ -103,7 +103,7 @@ class _RewardsHistoryPageState extends State<RewardsHistoryPage> {
         children: [
           _buildTotalBalanceCard(),
           
-          // 🎯 Modern E-Commerce Search Bar Layout Block
+          // Modern E-Commerce Search Bar Layout Block
           Padding(
             padding: const EdgeInsets.symmetric(horizontal: 16.0, vertical: 8.0),
             child: TextField(
@@ -166,7 +166,7 @@ class _RewardsHistoryPageState extends State<RewardsHistoryPage> {
 
                 var listItems = snapshot.data ?? [];
 
-                // 🎯 Filter records out dynamically based on the current search text query parameters
+                // Filter records out dynamically based on the current search text query parameters
                 if (_searchQuery.isNotEmpty) {
                   listItems = listItems.where((item) {
                     final String receiptId = (item['receipt_id'] ?? '').toString().toUpperCase();
@@ -200,7 +200,7 @@ class _RewardsHistoryPageState extends State<RewardsHistoryPage> {
                     final String title = item['title'];
                     final String receiptId = item['receipt_id'];
                     
-                    // 🎯 Detailed & Clean Timestamp Formatting Breakdown Routine
+                    // Detailed & Clean Timestamp Formatting Breakdown Routine
                     String formattedDateTime = "Today";
                     if (item['timestamp'] != null) {
                       DateTime date = (item['timestamp'] as Timestamp).toDate();
@@ -209,7 +209,7 @@ class _RewardsHistoryPageState extends State<RewardsHistoryPage> {
 
                     bool isDeduction = amount < 0;
 
-                    // 🎯 Beautiful Digital Wallet E-Commerce Style Item Cards Layout
+                    // Beautiful Digital Wallet E-Commerce Style Item Cards Layout
                     return Container(
                       margin: const EdgeInsets.only(bottom: 12),
                       decoration: BoxDecoration(
@@ -320,7 +320,7 @@ class _RewardsHistoryPageState extends State<RewardsHistoryPage> {
             ],
           ),
           child: Row(
-            // 🎯 Fixed: Changed .between to .spaceBetween
+            //Fixed: Changed .between to .spaceBetween
             mainAxisAlignment: MainAxisAlignment.spaceBetween,
             children: [
               Column(
@@ -333,7 +333,7 @@ class _RewardsHistoryPageState extends State<RewardsHistoryPage> {
                     style: const TextStyle(color: Colors.white, fontSize: 32, fontWeight: FontWeight.bold),
                   ),
                   const SizedBox(height: 4),
-                  // 🎯 Fixed: Changed color parameter type variant format from white87
+                  
                   Text("Ready to save on your next order", style: TextStyle(color: Colors.white.withOpacity(0.87), fontSize: 11)),
                 ],
               ),

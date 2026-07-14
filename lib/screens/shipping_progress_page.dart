@@ -93,7 +93,7 @@ class ShippingProgressPage extends StatelessWidget {
             padding: const EdgeInsets.all(24.0),
             child: ElevatedButton(
               onPressed: () {
-                // 🎯 FIX: Persistently pass back the outlet data to restore branch context on home screen
+                // FIX: Persistently pass back the outlet data to restore branch context on home screen
                 Navigator.pushNamedAndRemoveUntil(
                   context, 
                   '/home', 

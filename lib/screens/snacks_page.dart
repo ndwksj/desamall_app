@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
-import 'dart:convert'; // 🔑 Native Flutter decoder (super lightweight, no installation needed!)
+import 'dart:convert'; 
 import 'product_detail_page.dart';
 
 class SnacksPage extends StatelessWidget {
@@ -120,11 +120,11 @@ class SnacksPage extends StatelessWidget {
                     final String imagePath = item["imageUrl"]?.toString() ?? "";
                     final double price = (item["price"] is num) ? item["price"].toDouble() : double.tryParse(item["price"].toString()) ?? 0.0;
 
-                    // 🎯 FIX: Parse stock safely
+                    
                     var rawStock = item["stock"] ?? 0;
                     int parsedStock = (rawStock is String) ? (int.tryParse(rawStock) ?? 0) : (rawStock as num).toInt();
 
-                    // 🕒 Smart "NEW" calculation tag logic:
+                    
                     // Defaults to false so old products do not show the badge unless added within 48 hours.
                     bool isNewProduct = false; 
                     if (item.containsKey('timestamp') && item['timestamp'] != null) {
@@ -141,12 +141,12 @@ class SnacksPage extends StatelessWidget {
                       onTap: () {
                         Navigator.push(context, MaterialPageRoute(
                           builder: (context) => ProductDetailPage(
-                            id: doc.id, // 🎯 FIX: Passing ID
+                            id: doc.id, 
                             name: item["name"] ?? "Snack",
                             price: price.toString(),
                             image: imagePath,
                             outletId: outletId,
-                            stock: parsedStock, // 🎯 FIX: Passing Stock
+                            stock: parsedStock, 
                           ),
                         ));
                       },
@@ -174,7 +174,7 @@ class SnacksPage extends StatelessWidget {
                                     ),
                                     child: _buildProductImage(imagePath),
                                   ),
-                                  // ✨ Small "NEW" Product Badge Overlay Container
+                                  // Small "NEW" Product Badge Overlay Container
                                   if (isNewProduct)
                                     Positioned(
                                       top: 10,

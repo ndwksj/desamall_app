@@ -2,9 +2,9 @@ import 'package:flutter/material.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'dart:convert'; 
 import 'dart:math'; 
-import 'dart:io'; // 🚀 Added for handling local file paths
-import 'package:path_provider/path_provider.dart'; // 🚀 Added for temporary document directories
-import 'package:flutter_pdfview/flutter_pdfview.dart'; // 🚀 Added for rendering internal pop-up views
+import 'dart:io'; // Added for handling local file paths
+import 'package:path_provider/path_provider.dart'; // Added for temporary document directories
+import 'package:flutter_pdfview/flutter_pdfview.dart'; // Added for rendering internal pop-up views
 
 class ReceiptsAdmin extends StatefulWidget {
   final String branchAccess; 
@@ -82,7 +82,7 @@ class _ReceiptsAdminState extends State<ReceiptsAdmin> {
     }
   }
 
-  // 🚀 Internal helper that builds the PDF pop-up view without jumping outside the app
+  // Internal helper that builds the PDF pop-up view without jumping outside the app
   void _openInternalPdfPopUp(BuildContext context, String base64String, String customerName) async {
     showDialog(
       context: context,
@@ -144,7 +144,7 @@ class _ReceiptsAdminState extends State<ReceiptsAdmin> {
 
   @override
   Widget build(BuildContext context) {
-    // UPDATED LOGIC: If branchAccess is 'all', show everything. Otherwise, filter by outletId.
+    // If branchAccess is 'all', show everything. Otherwise, filter by outletId.
     Query receiptQuery = FirebaseFirestore.instance.collection('receipts');
 
     if (widget.branchAccess != 'all') {
@@ -706,7 +706,7 @@ class _ReceiptsAdminState extends State<ReceiptsAdmin> {
     try {
       if (customerId.isEmpty) throw "Could not find a valid Customer ID.";
       
-      // 🎯 Update the receipt status first (Always allowed for branch managers)
+      // Update the receipt status first (Always allowed for branch managers)
       Map<String, dynamic> receiptUpdates = {'status': newStatus};
       String? trackingNum;
 
@@ -717,7 +717,7 @@ class _ReceiptsAdminState extends State<ReceiptsAdmin> {
 
       await FirebaseFirestore.instance.collection('receipts').doc(docId).update(receiptUpdates);
 
-      // 🎯 SECURITY SAFEPOINT BLOCK: Updates loyalty profiles only if admin rules allow it
+      //  Updates loyalty profiles only if admin rules allow it
       if (newStatus == "Approved" && pointsEarned > 0.0) {
         try {
           WriteBatch loyaltyBatch = FirebaseFirestore.instance.batch();

@@ -1,5 +1,5 @@
 import 'dart:io';
-import 'dart:convert'; // 🎯 Needed for Base64
+import 'dart:convert'; // Needed for Base64
 import 'package:flutter/material.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
@@ -42,7 +42,7 @@ class SettingsAdminPage extends StatelessWidget {
           }
           
           var data = snapshot.data?.data() as Map<String, dynamic>? ?? {};
-          String? base64Image = data['storeLogo']; // 🖼️ Get Base64 String
+          String? base64Image = data['storeLogo']; // Get Base64 String
 
           return SingleChildScrollView(
             child: Column(
@@ -99,7 +99,7 @@ class SettingsAdminPage extends StatelessWidget {
                         ),
                         child: Column(
                           children: [
-                            // 🖼️ SHOW BASE64 LOGO OR DEFAULT ICON
+                            // SHOW BASE64 LOGO OR DEFAULT ICON
                             CircleAvatar(
                               radius: 35,
                               backgroundColor: Colors.redAccent,
@@ -234,7 +234,7 @@ class _StoreConfigPageState extends State<StoreConfigPage> {
   final TextEditingController branchController = TextEditingController();
   final TextEditingController phoneController = TextEditingController();
 
-  String? _base64Image; // 🎯 Stores the string
+  String? _base64Image; // Stores the string
   final ImagePicker _picker = ImagePicker();
 
   @override
@@ -249,14 +249,14 @@ class _StoreConfigPageState extends State<StoreConfigPage> {
   Future<void> _pickAndConvertImage() async {
     final XFile? image = await _picker.pickImage(
       source: ImageSource.gallery,
-      maxWidth: 400, // 📏 Resize to keep Base64 string short
+      maxWidth: 400, // Resize to keep Base64 string short
       imageQuality: 70, 
     );
 
     if (image != null) {
       final bytes = await image.readAsBytes();
       setState(() {
-        _base64Image = base64Encode(bytes); // 🎯 Convert to String
+        _base64Image = base64Encode(bytes); // Convert to String
       });
     }
   }
@@ -296,7 +296,7 @@ class _StoreConfigPageState extends State<StoreConfigPage> {
                   'storeName': nameController.text.trim(),
                   'branchLocation': branchController.text.trim(),
                   'phoneNumber': phoneController.text.trim(),
-                  'storeLogo': _base64Image, // 🎯 Saves string to Firestore
+                  'storeLogo': _base64Image, // Saves string to Firestore
                 }, SetOptions(merge: true));
                 Navigator.pop(context);
               },

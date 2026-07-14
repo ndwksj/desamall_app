@@ -12,7 +12,7 @@ class ReceiptsHistoryCustomer extends StatefulWidget {
 }
 
 class _ReceiptsHistoryCustomerState extends State<ReceiptsHistoryCustomer> {
-  // 🎯 Updated: State string now initializes automatically matching the parameter sent from profile page
+  // Updated: State string now initializes automatically matching the parameter sent from profile page
   late String _selectedFilter;
   final TextEditingController _searchController = TextEditingController();
 
@@ -201,7 +201,7 @@ class _ReceiptsHistoryCustomerState extends State<ReceiptsHistoryCustomer> {
     final Timestamp startTime = Timestamp.fromDate(receiptDate.subtract(const Duration(minutes: 5)));
     final Timestamp endTime = Timestamp.fromDate(receiptDate.add(const Duration(minutes: 5)));
 
-    // 🔑 NEW METHOD DETECTOR: Detect fulfillment strategy based on explicit field flag or address string contents
+    // NEW METHOD DETECTOR: Detect fulfillment strategy based on explicit field flag or address string contents
     bool isSelfPickup = data['delivery_method'] == "Self-Pickup" || 
                         (data['shipping_address']?.toString().startsWith("Self-Pickup") ?? false) || 
                         (data['address']?.toString().startsWith("Self-Pickup") ?? false);
@@ -214,7 +214,7 @@ class _ReceiptsHistoryCustomerState extends State<ReceiptsHistoryCustomer> {
       builder: (context) => DraggableScrollableSheet(
         initialChildSize: 0.80, minChildSize: 0.5, maxChildSize: 0.95, expand: false,
         builder: (context, scrollController) => FutureBuilder<Map<String, dynamic>>(
-          // 🔑 DEEP RESOLUTION MATRIX: First checks explicit profile page data, then fallback queries
+          // DEEP RESOLUTION MATRIX: First checks explicit profile page data, then fallback queries
           future: () async {
             try {
               // 1. Check if the active profile document map data passed down already contains items directly
@@ -249,7 +249,7 @@ class _ReceiptsHistoryCustomerState extends State<ReceiptsHistoryCustomer> {
             Map<String, dynamic> orderData = orderSnapshot.data ?? {};
             String assignedOutlet = "Verifying Outlet...";
 
-            // 🎯 FIXED OUTLET MAPPER MATRIX CONFIGURATION
+            // FIXED OUTLET MAPPER MATRIX CONFIGURATION
             if (orderData.isNotEmpty || data.isNotEmpty) {
               // Combine parameters safely to find accurate structural IDs
               String outletId = (orderData['outletId'] ?? data['outletId'] ?? data['outlet'] ?? "").toString();
@@ -341,7 +341,7 @@ class _ReceiptsHistoryCustomerState extends State<ReceiptsHistoryCustomer> {
                         : const SizedBox(),
                   ],
                   const Divider(height: 25),
-                  // 🔑 OPTIMIZATION: Dynamically re-labels context title text description rows smoothly
+                  // Dynamically re-labels context title text description rows smoothly
                   _buildDetailRow(
                     isSelfPickup ? "Collection Location" : "Delivery Address", 
                     data['shipping_address'] ?? data['address'] ?? "No Address Provided", 
@@ -356,7 +356,7 @@ class _ReceiptsHistoryCustomerState extends State<ReceiptsHistoryCustomer> {
                       ? const Padding(padding: EdgeInsets.symmetric(vertical: 20), child: Center(child: CircularProgressIndicator(color: Colors.redAccent)))
                       : _buildOrderItemsSection(orderData, data),
                   
-                  // 🎯 NEW EMBEDDED INLINE TIMELINE: Only displays for non-rejected items
+                  //  Only displays for non-rejected items
                   if (currentStatus != "Rejected") ...[
                     const SizedBox(height: 30),
                     const Text("Order Tracking Status", style: TextStyle(fontWeight: FontWeight.bold, fontSize: 15, color: Colors.black87)),
@@ -420,7 +420,7 @@ class _ReceiptsHistoryCustomerState extends State<ReceiptsHistoryCustomer> {
   }
 
   Widget _buildOrderItemsSection(Map<String, dynamic> orderData, Map<String, dynamic> receiptData) {
-    // 🔑 FIXED DETECTOR SEQUENCE: Prioritize parsing the directly uploaded items inside the receipt data object first
+    // Prioritize parsing the directly uploaded items inside the receipt data object first
     var rawItems = receiptData['items'] ?? orderData['items'];
     List<dynamic> itemsList = [];
     if (rawItems != null) {
@@ -448,7 +448,7 @@ class _ReceiptsHistoryCustomerState extends State<ReceiptsHistoryCustomer> {
     );
   }
 
-  // 🎯 HELPER WIDGET: Draws individual inline layout sequence line nodes beautifully
+  //  Draws individual inline layout sequence line nodes beautifully
   Widget _buildEmbeddedStep({required String title, required String subtitle, required bool isCompleted, required bool isLast}) {
     return IntrinsicHeight(
       child: Row(

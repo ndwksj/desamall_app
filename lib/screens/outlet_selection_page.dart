@@ -6,7 +6,7 @@ class OutletSelectionPage extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: const Color(0xFFF8F9FA), // Professional light grey background
+      backgroundColor: const Color(0xFFF8F9FA), 
       body: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [

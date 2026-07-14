@@ -24,7 +24,7 @@ class _HomeAdminState extends State<HomeAdmin> {
   List<String> _matchedOutletDocIds = []; 
   bool _isLoadingRole = true;
 
-  // ⚡ PERFORMANCE FIX: Store stable stream references in state memory
+  // Store stable stream references in state memory
   Stream<QuerySnapshot>? _badgeStream;
   Stream<DocumentSnapshot>? _profileCardStream;
   Stream<QuerySnapshot>? _outletsHorizontalStream;
@@ -94,7 +94,7 @@ class _HomeAdminState extends State<HomeAdmin> {
               _branchAccess = branchText;
               _matchedOutletDocIds = matchedIds;
               _isLoadingRole = false;
-              // ⚡ PERFORMANCE FIX: Initialize query configurations immediately after context resolves
+              // Initialize query configurations immediately after context resolves
               _prepareDataStreams();
             });
           }
@@ -112,7 +112,7 @@ class _HomeAdminState extends State<HomeAdmin> {
     }
   }
 
-  // ⚡ PERFORMANCE FIX: Instantiates the listeners once to completely eliminate UI micro-stutters
+  // Instantiates the listeners once to completely eliminate UI micro-stutters
   void _prepareDataStreams() {
     // 1. Orders badge counter stream setup
     Query pendingQuery = FirebaseFirestore.instance

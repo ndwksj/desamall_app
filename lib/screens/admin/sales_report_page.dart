@@ -235,10 +235,10 @@ class _SalesReportPageState extends State<SalesReportPage> {
 
         final allDocs = snapshot.data?.docs ?? [];
         double totalRevenue = 0.0;
-        double overallAccumulativeRevenue = 0.0; // 🎯 Added for Main Admin total sum calculations
+        double overallAccumulativeRevenue = 0.0; // Added for Main Admin total sum calculations
         Map<String, int> productSalesCount = {};
         
-        // 🎯 Track monthly layout values for Branch Admins graph
+        // Track monthly layout values for Branch Admins graph
         Map<int, double> monthlySalesMap = {for (int i = 1; i <= 12; i++) i: 0.0};
 
         Map<int, double> yearlyRevenueMap = {
@@ -260,7 +260,7 @@ class _SalesReportPageState extends State<SalesReportPage> {
             orderTotal = double.tryParse(rawTotal.replaceAll(RegExp(r'[^\d.]'), '')) ?? 0.0;
           }
 
-          // 🎯 Keep a running sum of everything for the Main Admin's accumulative view
+          // Keep a running sum of everything for the Main Admin's accumulative view
           overallAccumulativeRevenue += orderTotal;
 
           if (selectedOutletId != null) {
@@ -290,7 +290,7 @@ class _SalesReportPageState extends State<SalesReportPage> {
             yearlyRevenueMap[2026] = (yearlyRevenueMap[2026] ?? 0.0) + orderTotal;
           }
 
-          // 🎯 Collect monthly performance tracking data if it matches current filtered year
+          // Collect monthly performance tracking data if it matches current filtered year
           if (date != null && date.year == selectedYear) {
             monthlySalesMap[date.month] = (monthlySalesMap[date.month] ?? 0.0) + orderTotal;
           }
@@ -349,13 +349,13 @@ class _SalesReportPageState extends State<SalesReportPage> {
           children: [
             _buildRevenueHeader(totalRevenue, months[selectedMonth - 1], selectedYear),
             
-            // 🎯 STAKEHOLDER DESIGN REQUIREMENT 1: Main Admin Overall Accumulative Sales view card
+            // STAKEHOLDER DESIGN REQUIREMENT 1: Main Admin Overall Accumulative Sales view card
             if (isMainAdmin) ...[
               const SizedBox(height: 12),
               _buildAccumulativeSalesCard(overallAccumulativeRevenue),
             ],
 
-            // 🎯 STAKEHOLDER DESIGN REQUIREMENT 2: Branch Admin Visual Monthly Graph view
+            // STAKEHOLDER DESIGN REQUIREMENT 2: Branch Admin Visual Monthly Graph view
             if (!isMainAdmin) ...[
               const SizedBox(height: 20),
               _buildBranchMonthlySalesGraph(monthlySalesMap, selectedYear),
@@ -402,7 +402,7 @@ class _SalesReportPageState extends State<SalesReportPage> {
     );
   }
 
-  // 🎯 NEW DESIGN METHOD: Builds the lifetime revenue tracking element for the Super Admin view
+  // NEW DESIGN METHOD: Builds the lifetime revenue tracking element for the Super Admin view
   Widget _buildAccumulativeSalesCard(double overallTotal) {
     return Container(
       width: double.infinity,
@@ -441,7 +441,7 @@ class _SalesReportPageState extends State<SalesReportPage> {
     );
   }
 
-  // 🎯 NEW DESIGN METHOD: Render graph metrics layout perfectly matching design context
+  // NEW DESIGN METHOD: Render graph metrics layout perfectly matching design context
   Widget _buildBranchMonthlySalesGraph(Map<int, double> monthlySalesMap, int targetYear) {
     double maxSaleValue = monthlySalesMap.values.fold(0.0, (max, element) => element > max ? element : max);
     if (maxSaleValue == 0) maxSaleValue = 1.0; 

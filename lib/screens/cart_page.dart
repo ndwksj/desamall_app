@@ -1,5 +1,5 @@
 import 'package:flutter/material.dart';
-import 'dart:convert'; // 🔑 Native Flutter decoder (super lightweight, no installation needed!)
+import 'dart:convert'; 
 import '../cart.dart'; 
 import 'checkout_page.dart';
 import 'home_screen.dart';

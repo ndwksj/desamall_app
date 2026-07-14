@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
-import 'dart:convert'; // 🔑 Native Flutter decoder from nursery_page.dart
+import 'dart:convert'; 
 import '../models/product.dart';
 import 'categories_page.dart';
 import 'cart_page.dart';

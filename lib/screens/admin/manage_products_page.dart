@@ -18,7 +18,7 @@ class _ManageProductsPageState extends State<ManageProductsPage> {
   String? selectedOutletId;
   String? selectedOutletName;
 
-  // 🎯 Matches products_admin.dart precisely
+  // Matches products_admin.dart precisely
   final List<String> categories = [
     "Beverages", 
     "Cooking essentials", 
@@ -38,7 +38,7 @@ class _ManageProductsPageState extends State<ManageProductsPage> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: const Color(0xFFF6F8FA), // Premium background canvas color
+      backgroundColor: const Color(0xFFF6F8FA),
       body: Column(
         children: [
           Container(

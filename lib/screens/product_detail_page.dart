@@ -1,10 +1,10 @@
 import 'package:flutter/material.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart'; 
-import 'dart:convert'; // 🔑 Added to decode raw image strings from the admin side
+import 'dart:convert'; 
 import '../cart.dart';
 import '../favorites.dart';
-import 'cart_page.dart'; // 🔄 Added to enable direct navigation to Cart view
+import 'cart_page.dart'; 
 
 class ProductDetailPage extends StatefulWidget {
   final String? id; 

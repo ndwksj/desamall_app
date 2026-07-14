@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:cloud_firestore/cloud_firestore.dart'; 
-import 'dart:convert'; // 🔑 Native Flutter decoder (super lightweight, no installation needed!)
+import 'dart:convert'; 
 import '../favorites.dart';
 import 'product_detail_page.dart';
 
@@ -31,7 +31,7 @@ class _FavoritesPageState extends State<FavoritesPage> {
         shape: const RoundedRectangleBorder(
           borderRadius: BorderRadius.vertical(bottom: Radius.circular(20)),
         ),
-        // 🎯 FIX: Navigates explicitly to your HomeScreen named route and clears the login/outlet stack!
+        
         leading: IconButton(
           icon: const Icon(Icons.arrow_back_ios_new_rounded),
           onPressed: () {

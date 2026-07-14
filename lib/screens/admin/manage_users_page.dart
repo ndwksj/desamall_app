@@ -11,7 +11,7 @@ class ManageUsersPage extends StatefulWidget {
 class _ManageUsersPageState extends State<ManageUsersPage> {
   final FirebaseFirestore _firestore = FirebaseFirestore.instance;
 
-  // 🛠️ FUNCTION: Delete Admin
+  // FUNCTION: Delete Admin
   Future<void> _deleteUser(String docId) async {
     return showDialog(
       context: context,
@@ -53,7 +53,7 @@ class _ManageUsersPageState extends State<ManageUsersPage> {
     );
   }
 
-  // 🛠️ FUNCTION: Edit Admin Account details
+  // FUNCTION: Edit Admin Account details
   void _editUser(String docId, Map<String, dynamic> userData) {
     TextEditingController nameController = TextEditingController(text: userData['name']);
     TextEditingController emailController = TextEditingController(text: userData['email']);

@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
-import 'dart:convert'; // 🔑 Native Flutter decoder for administrative uploaded product pictures
+import 'dart:convert'; // Native Flutter decoder for administrative uploaded product pictures
 import 'payment_page.dart';
 
 class CheckoutPage extends StatefulWidget {
@@ -26,11 +26,11 @@ class _CheckoutPageState extends State<CheckoutPage> {
   Map<String, dynamic> _userData = {};
   bool _isLoading = true;
 
-  // 🛠️ FIX: Removed 'late' and initialized variables directly in initState safely
+  //  FIX: Removed 'late' and initialized variables directly in initState safely
   List<dynamic> _localItems = [];
   double _localSubtotal = 0.0;
 
-  // 🔑 NEW STATES: Track whether customer selects Self-Pickup or Delivery
+  // NEW STATES: Track whether customer selects Self-Pickup or Delivery
   String _selectedDeliveryMethod = "Delivery"; // Options: "Delivery" or "Self-Pickup"
 
   @override
@@ -94,7 +94,7 @@ class _CheckoutPageState extends State<CheckoutPage> {
     });
   }
 
-  // 🔑 HELPER: Dynamic logic handler to calculate realistic delivery values based on address location
+  // HELPER: Dynamic logic handler to calculate realistic delivery values based on address location
   double _calculateDynamicDeliveryFee(String? address) {
     if (_selectedDeliveryMethod == "Self-Pickup") {
       return 0.0; // Self-pickup is completely free
@@ -129,7 +129,7 @@ class _CheckoutPageState extends State<CheckoutPage> {
       WriteBatch batch = FirebaseFirestore.instance.batch();
       bool hasUpdates = false;
 
-      // 🛠️ DATA NORMALIZATION: Keeps admin panel fields and manual fields completely unified
+      // DATA NORMALIZATION: Keeps admin panel fields and manual fields completely unified
       List<Map<String, dynamic>> normalizedItems = [];
 
       for (var item in _localItems) {
@@ -172,7 +172,7 @@ class _CheckoutPageState extends State<CheckoutPage> {
 
       await newOrderDocRef.set({
         'productName': normalizedItems.isNotEmpty ? normalizedItems[0]['name'] : 'Multiple Items',
-        'items': normalizedItems, // 🔑 Fixed: Saves unified fields so receipts load every item correctly
+        'items': normalizedItems, // Fixed: Saves unified fields so receipts load every item correctly
         'quantity': normalizedItems.length,
         'totalPrice': total,
         'outletId': widget.outletId,
@@ -180,7 +180,7 @@ class _CheckoutPageState extends State<CheckoutPage> {
         'timestamp': FieldValue.serverTimestamp(),
         'status': 'paid',
         'uid': user?.uid,
-        'deliveryMethod': _selectedDeliveryMethod, // 🔑 Track if order is delivery or pickup
+        'deliveryMethod': _selectedDeliveryMethod, // Track if order is delivery or pickup
       });
 
       return generatedOrderId;
@@ -191,7 +191,7 @@ class _CheckoutPageState extends State<CheckoutPage> {
   }
 
   void _showAddAddressDialog() {
-    // 🏠 Structured input controllers matching SV feedback
+    // Structured input controllers matching SV feedback
     final streetController = TextEditingController();
     final cityController = TextEditingController();
     final stateController = TextEditingController();
@@ -265,7 +265,7 @@ class _CheckoutPageState extends State<CheckoutPage> {
                 String postal = postalCodeController.text.trim();
 
                 if (street.isNotEmpty && city.isNotEmpty && state.isNotEmpty && postal.isNotEmpty && user != null) {
-                  // 🧵 Combine into a unified string so that no current layout frameworks break
+                  //  Combine into a unified string so that no current layout frameworks break
                   String newAddress = "$street, $postal $city, $state";
                   try {
                     DocumentReference userRef = FirebaseFirestore.instance.collection('users').doc(user!.uid);

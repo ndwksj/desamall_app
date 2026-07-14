@@ -117,7 +117,7 @@ class _ProductsAdminState extends State<ProductsAdmin> {
     if (res is String && res != '-1') {
       currentScannedBarcode = res;
       
-      // 🔑 THE OMNI-QUERY DYNAMIC FIX: First query main 'products' collection by field attributes
+      //  First query main 'products' collection by field attributes
       var productQuery = await FirebaseFirestore.instance
           .collection('products')
           .where('barcode', isEqualTo: res)

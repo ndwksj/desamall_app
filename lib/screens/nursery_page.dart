@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:cloud_firestore/cloud_firestore.dart'; 
-import 'dart:convert'; // 🔑 Native Flutter decoder (super lightweight, no installation needed!)
+import 'dart:convert'; // 🔑 Native Flutter decoder 
 import 'product_detail_page.dart';
 
 class NurseryPage extends StatelessWidget {

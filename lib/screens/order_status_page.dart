@@ -2,7 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'dart:convert';
-import 'shipping_progress_page.dart'; // Ensure this import is correct
+import 'shipping_progress_page.dart'; 
 
 class OrderStatusPage extends StatelessWidget {
   final User? user = FirebaseAuth.instance.currentUser;
@@ -127,7 +127,7 @@ class OrderStatusPage extends StatelessWidget {
                             ],
                           ),
                           
-                          // 🎯 NEW: TRACK ORDER BUTTON (Supports Approved & Shipped states dynamically)
+                          // TRACK ORDER BUTTON (Supports Approved & Shipped states dynamically)
                           if (status != "Rejected" && status != "Unpaid")
                             Padding(
                               padding: const EdgeInsets.only(top: 15),
@@ -141,7 +141,7 @@ class OrderStatusPage extends StatelessWidget {
                                         builder: (context) => ShippingProgressPage(
                                           address: data['shipping_address'] ?? data['address'] ?? "No Address Provided",
                                           total: priceValue,
-                                          currentStatus: status, // Pass status here!
+                                          currentStatus: status, // Pass status here
                                         ),
                                       ),
                                     );

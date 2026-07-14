@@ -14,7 +14,7 @@ class UploadReceiptPage extends StatefulWidget {
   final String? selectedOutlet;
   final double? pointsEarned;
   final String? outletId;
-  final String? orderId; // 🚀 Added to receive the pre-generated Order Document ID string
+  final String? orderId; // Added to receive the pre-generated Order Document ID string
   final bool isPointsRedeemed; // Added parameter to handle the balance clear execution logic safely
 
   UploadReceiptPage({
@@ -24,7 +24,7 @@ class UploadReceiptPage extends StatefulWidget {
     this.selectedOutlet, 
     this.pointsEarned,
     this.outletId,
-    this.orderId, // 🚀 Added to constructor mapping setup
+    this.orderId, // Added to constructor mapping setup
     this.isPointsRedeemed = false, // Instantiated default parameters safely
   }) : super(key: key);
 
@@ -153,14 +153,14 @@ class _UploadReceiptPageState extends State<UploadReceiptPage> {
       DocumentSnapshot userDoc = await FirebaseFirestore.instance.collection('users').doc(user.uid).get();
       String userName = userDoc.exists ? (userDoc.data() as Map<String, dynamic>)['name'] ?? "Customer" : "Customer";
 
-      // 🎯 Fetch user's active point value before resetting it to 0
+      // Fetch user's active point value before resetting it to 0
       double currentPointsBalance = userDoc.exists ? ((userDoc.data() as Map<String, dynamic>)['reward_points'] ?? 0.0).toDouble() : 0.0;
 
-      // 🔑 NEW RULE: Check for minimum spend floor of RM 100
+      // NEW RULE: Check for minimum spend floor of RM 100
       double amount = widget.totalAmount ?? 0.0;
       double calculatedPoints = amount > 100.0 ? amount * 0.005 : 0.0;
 
-      // 🔑 NEW METHOD DETECTOR: Intelligently identifies if the user chose self pickup
+      // NEW METHOD DETECTOR: Intelligently identifies if the user chose self pickup
       bool isSelfPickup = widget.selectedAddress?.startsWith("Self-Pickup") ?? false;
       String deliveryMethod = isSelfPickup ? "Self-Pickup" : "Delivery";
 
@@ -178,15 +178,15 @@ class _UploadReceiptPageState extends State<UploadReceiptPage> {
         'outlet': widget.selectedOutlet ?? 'General',
         'outletId': finalOutletId, 
         'order_id': widget.orderId, 
-        'delivery_method': deliveryMethod, // 🔑 NEW FIELD: Synchronizes delivery method option to database
+        'delivery_method': deliveryMethod, // Synchronizes delivery method option to database
       };
 
-      // 🔑 NEW RULE: If self-pickup is active, default tracking number parameter inside receipt layout
+      // If self-pickup is active, default tracking number parameter inside receipt layout
       if (isSelfPickup) {
         receiptData['tracking_number'] = "Self-Pickup";
       }
 
-      // 🚀 Set the receipt's Document ID to equal the Order's Document ID exactly
+      // Set the receipt's Document ID to equal the Order's Document ID exactly
       if (widget.orderId != null && widget.orderId!.trim().isNotEmpty) {
         debugPrint("DEBUG: UploadReceiptPage - Saving to Firestore with finalOutletId: $finalOutletId");
         await FirebaseFirestore.instance
@@ -199,7 +199,7 @@ class _UploadReceiptPageState extends State<UploadReceiptPage> {
             .add(receiptData);
       }
 
-      // --- 🎯 ATOMIC TRANSACTION BATCH FOR REWARDS HISTORY UPDATES ---
+      // --- ATOMIC TRANSACTION BATCH FOR REWARDS HISTORY UPDATES ---
       WriteBatch rewardsBatch = FirebaseFirestore.instance.batch();
       DocumentReference userRef = FirebaseFirestore.instance.collection('users').doc(user.uid);
 
@@ -330,7 +330,7 @@ class _UploadReceiptPageState extends State<UploadReceiptPage> {
                   ),
                   onPressed: () async {
   if (selectedRating > 0) {
-    // 🚀 FIXED: Now including the required fields for your dashboard to see them
+    // Now including the required fields for dashboard to show
     await FirebaseFirestore.instance.collection('reviews').add({
       'rating': selectedRating,
       'feedback': feedbackController.text,
@@ -381,7 +381,7 @@ class _UploadReceiptPageState extends State<UploadReceiptPage> {
 
   @override
   Widget build(BuildContext context) {
-    // 🔑 NEW DESIGN LOGIC: Dynamically update top panel indicator headers
+    //  Dynamically update top panel indicator headers
     bool isSelfPickup = widget.selectedAddress?.startsWith("Self-Pickup") ?? false;
 
     return Scaffold(

@@ -2,7 +2,7 @@ import 'dart:convert';
 import 'dart:io';
 import 'package:flutter/material.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
-import 'package:image_picker/image_picker.dart'; // 🎯 Added for Image Upload
+import 'package:image_picker/image_picker.dart'; // Added for Image Upload
 
 class OutletDetailsAdmin extends StatefulWidget {
   final Map<String, dynamic> outlet;
@@ -17,7 +17,7 @@ class OutletDetailsAdmin extends StatefulWidget {
 class _OutletDetailsAdminState extends State<OutletDetailsAdmin> {
   late TextEditingController nameController;
   late TextEditingController addressController;
-  String? currentImageBase64; // 🎯 To store selected/current image
+  String? currentImageBase64; // To store selected/current image
 
   @override
   void initState() {
@@ -27,7 +27,7 @@ class _OutletDetailsAdminState extends State<OutletDetailsAdmin> {
     currentImageBase64 = widget.outlet["image"]; // Load existing image
   }
 
-  // 📸 NEW: Function to pick image from gallery
+  // Function to pick image from gallery
   Future<void> _pickImage() async {
     final ImagePicker picker = ImagePicker();
     final XFile? image = await picker.pickImage(source: ImageSource.gallery, imageQuality: 50);
@@ -87,7 +87,7 @@ class _OutletDetailsAdminState extends State<OutletDetailsAdmin> {
       await FirebaseFirestore.instance.collection('outlets').doc(widget.docId).update({
         "name": nameController.text.trim(),
         "address": addressController.text.trim(),
-        "image": currentImageBase64, // 🎯 Saves the new Base64 or existing string
+        "image": currentImageBase64, // Saves the new Base64 or existing string
       });
 
       if (mounted) {
@@ -104,7 +104,7 @@ class _OutletDetailsAdminState extends State<OutletDetailsAdmin> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: const Color(0xFFF6F8FA), // Premium uniform canvas background
+      backgroundColor: const Color(0xFFF6F8FA), 
       appBar: AppBar(
         title: const Text(
           "OUTLET CONFIGURATION", 
@@ -133,7 +133,7 @@ class _OutletDetailsAdminState extends State<OutletDetailsAdmin> {
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            // 📸 IMAGE UPLOAD SECTION
+            // IMAGE UPLOAD SECTION
             const Text(
               "Outlet Showcase Image", 
               style: TextStyle(fontWeight: FontWeight.w800, fontSize: 13, color: Color(0xFF1F2A38), letterSpacing: 0.2)

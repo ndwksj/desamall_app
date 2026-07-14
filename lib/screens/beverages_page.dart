@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:cloud_firestore/cloud_firestore.dart'; 
-import 'dart:convert'; // 🔑 Native Flutter decoder (super lightweight, no installation needed!)
+import 'dart:convert'; 
 import 'product_detail_page.dart';
 
 class BeveragesPage extends StatelessWidget {
@@ -76,7 +76,7 @@ class BeveragesPage extends StatelessWidget {
               child: Text("Minuman", style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold)),
             ),
 
-            // 🚀 LIVE PRODUCT GRID FROM FIRESTORE
+            // LIVE PRODUCT GRID FROM FIRESTORE
             StreamBuilder<QuerySnapshot>(
               stream: FirebaseFirestore.instance
                   .collection('products')
@@ -126,13 +126,13 @@ class BeveragesPage extends StatelessWidget {
                     final String imagePath = item["imageUrl"]?.toString() ?? "";
                     final double price = (item["price"] is num) ? item["price"].toDouble() : double.tryParse(item["price"].toString()) ?? 0.0;
                     
-                    // 🎯 FIX: Parse stock safely (Handles String or Number)
+                    // FIX: Parse stock safely (Handles String or Number)
                     var rawStock = item["stock"] ?? 0;
                     int parsedStock = (rawStock is String) 
                         ? (int.tryParse(rawStock) ?? 0) 
                         : (rawStock as num).toInt();
 
-                    // 🕒 Smart "NEW" calculation tag:
+                    // Smart "NEW" calculation tag:
                     // Only evaluates to true if item contains a valid timestamp within 48 hours.
                     bool isNewProduct = false; 
                     if (item.containsKey('timestamp') && item['timestamp'] != null) {
@@ -151,12 +151,12 @@ class BeveragesPage extends StatelessWidget {
                           context,
                           MaterialPageRoute(
                             builder: (context) => ProductDetailPage(
-                              id: doc.id, // 🎯 FIX: Added ID for StreamBuilder sync
+                              id: doc.id, // Added ID for StreamBuilder sync
                               name: item["name"] ?? "Unknown",
                               price: price.toString(),
                               image: imagePath.isEmpty ? "assets/images/air 1.png" : imagePath,
                               outletId: outletId,
-                              stock: parsedStock, // 🎯 FIX: Passing actual stock
+                              stock: parsedStock, // Passing actual stock
                             ),
                           ),
                         );
@@ -186,7 +186,7 @@ class BeveragesPage extends StatelessWidget {
                                     ),
                                     child: _buildProductImage(imagePath),
                                   ),
-                                  // ✨ The Small "NEW" Product Badge Overlay
+                                  
                                   if (isNewProduct)
                                     Positioned(
                                       top: 10,

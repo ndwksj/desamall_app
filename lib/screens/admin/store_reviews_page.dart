@@ -80,7 +80,7 @@ class _SalesReportPageState extends State<SalesReportPage> {
           if (docName.contains(lookup) || lookup.contains('batas') && docName.contains('batas') || lookup.contains('lipis') && docName.contains('lipis') || lookup.contains('ipoh') && docName.contains('ipoh')) {
             if (mounted) {
               setState(() {
-                selectedOutletId = outletDoc.id; // 🔑 Correctly set the dynamic Firestore Doc ID so orders filter properly
+                selectedOutletId = outletDoc.id; // set the dynamic Firestore Doc ID so orders filter properly
                 String rawName = outletDoc.data()['name'] ?? '';
                 if (rawName.toLowerCase().contains('ipoh')) {
                   selectedOutletName = "DesaMall@Ipoh";
@@ -137,7 +137,7 @@ class _SalesReportPageState extends State<SalesReportPage> {
       ),
       body: Column(
         children: [
-          // 🛠️ Dynamic visibility switcher based on user privileges
+          // Dynamic visibility switcher based on user privileges
           if (isMainAdmin) _buildOutletPicker(),
           _buildDateFilters(),
           const Divider(height: 1),
@@ -237,7 +237,7 @@ class _SalesReportPageState extends State<SalesReportPage> {
         double totalRevenue = 0.0;
         Map<String, int> productSalesCount = {};
 
-        // 📈 PRE-LOADED MOCK REVENUE DATA FOR PAST YEARS (2019-2025)
+        // PRE-LOADED MOCK REVENUE DATA FOR PAST YEARS (2019-2025)
         Map<int, double> yearlyRevenueMap = {
           2019: 14250.00,
           2020: 19800.50,
@@ -249,7 +249,7 @@ class _SalesReportPageState extends State<SalesReportPage> {
           2026: 0.0,
         };
 
-        // 📅 PRE-LOADED MOCK REVENUE DATA FOR EARLY 2026 MONTHS (Jan-Mar)
+        // PRE-LOADED MOCK REVENUE DATA FOR EARLY 2026 MONTHS (Jan-Mar)
         Map<int, double> mockMonths2026 = {
           1: 1850.00, 
           2: 2100.40, 
@@ -280,7 +280,7 @@ class _SalesReportPageState extends State<SalesReportPage> {
         for (var doc in allDocs) {
           var data = doc.data() as Map<String, dynamic>;
 
-          // 🛠️ FIX 1: Safely accept status variants like "Shipped" or "Approved" so June totals display perfectly
+          //  FIX 1: Safely accept status variants like "Shipped" or "Approved" so June totals display perfectly
           String docStatus = (data['status'] ?? '').toString().toLowerCase();
           if (docStatus == 'rejected' || docStatus == 'pending') {
             continue; 
@@ -288,7 +288,7 @@ class _SalesReportPageState extends State<SalesReportPage> {
 
           String docOutletId = (data['outletId'] ?? '').toString();
           
-          // 🛠️ FIX 2: Added dynamic fallback to read the explicit 'outlet' descriptor string matching your Firestore document keys
+          //  FIX 2: Added dynamic fallback to read the explicit 'outlet' descriptor string matching your Firestore document keys
           String docOutletName = (data['outlet'] ?? data['outletName'] ?? data['assignedOutlet'] ?? '').toString();
 
           if (selectedOutletId != null) {
