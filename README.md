@@ -14,3 +14,10 @@ A few resources to get you started if this is your first Flutter project:
 For help getting started with Flutter development, view the
 [online documentation](https://docs.flutter.dev/), which offers tutorials,
 samples, guidance on mobile development, and a full API reference.
+
+# DesaMall Mobile Application
+
+## How to Run:
+1. Ensure Flutter SDK 3.29.2 is installed.
+2. Run `flutter pub get` in the terminal to download packages.
+3. Run `flutter run` on an iOS Simulator or connected device.
